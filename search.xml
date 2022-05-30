@@ -1,0 +1,1657 @@
+<?xml version="1.0" encoding="utf-8"?>
+<search>
+  <entry>
+    <title>Kubespray 2.18 版本特性预览</title>
+    <url>/2022-01-05-kubespray-2.18.html</url>
+    <content><![CDATA[<p>最近 kubernetes-sig 社区的 <a href="https://github.com/kubernetes-sigs/kubespray">kubespray</a> 项目正式 release 了 <a href="https://github.com/kubernetes-sigs/kubespray/releases/tag/v2.18.0">v2.18.0</a> 版本，同时对应 <a href="https://github.com/cncf/k8s-conformance">k8s-conformance</a> 的 <a href="https://github.com/cncf/k8s-conformance/pull/1748">v1.21</a> 和 <a href="https://github.com/cncf/k8s-conformance/pull/1760">v1.22</a> 版本 kubespray 也都已经得到 CNCF 的一致性认证。于是今天就借这个新版本 release 的机会整理一下 2.18 版本的 kubespray 有哪些有趣的变化。</p>
+<h2 id="组件版本"><a href="#组件版本" class="headerlink" title="组件版本"></a>组件版本</h2><p>以下是 v2.18.0 版本中 kubespray 部署组件的一些版本信息：</p>
+<h3 id="K8s-核心组件"><a href="#K8s-核心组件" class="headerlink" title="K8s 核心组件"></a>K8s 核心组件</h3><ul>
+<li>kubespray 支持的 Kubernetes 支持从 v1.22.0 到 v1.23.1 之间的所有正式版本，默认部署的版本为 v1.22.5，并且 <a href="https://github.com/cncf/k8s-conformance/pull/1760">v1.22</a> 版本得到了 CNCF 官方的一致性认证；</li>
+<li>etcd 从原来的 v3.4.13 升级到了 v3.5.0；</li>
+<li>coredns 版本升级到了 v1.8.0，它的搭档 dnsautoscaler 则为 1.8.5；</li>
+<li>pod_infra 即 pause 镜像的版本没有变化依旧为 3.3；</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Addon</th>
+<th align="left">Version</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>kube</td>
+<td align="left">v1.22.5</td>
+</tr>
+<tr>
+<td>pod_infra</td>
+<td align="left">3.3</td>
+</tr>
+<tr>
+<td>etcd</td>
+<td align="left">v3.5.0</td>
+</tr>
+<tr>
+<td>coredns</td>
+<td align="left">v1.8.0</td>
+</tr>
+</tbody></table>
+<h3 id="容器运行时"><a href="#容器运行时" class="headerlink" title="容器运行时"></a>容器运行时</h3><p>目前市面上所有的 Kubernetes 集群部署工具中，对容器运行时的支持 kubespray 无疑是最丰富的。部署能支持 docker、containerd、crun、kata、cri-o。默认的容器运行时已经从之前的 docker 切换到了 containerd，containerd 的版本是 v1.5.8。</p>
+<table>
+<thead>
+<tr>
+<th>Addon</th>
+<th>Version</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>containerd</td>
+<td>1.5.8</td>
+</tr>
+<tr>
+<td>docker</td>
+<td>20.10</td>
+</tr>
+<tr>
+<td>docker_containerd</td>
+<td>1.4.12</td>
+</tr>
+<tr>
+<td>crun</td>
+<td>1.3</td>
+</tr>
+<tr>
+<td>runc</td>
+<td>v1.0.3</td>
+</tr>
+<tr>
+<td>crio</td>
+<td>1.22</td>
+</tr>
+<tr>
+<td>kata_containers</td>
+<td>2.2.3</td>
+</tr>
+<tr>
+<td>gvisor</td>
+<td>20210921</td>
+</tr>
+</tbody></table>
+<h3 id="CNI"><a href="#CNI" class="headerlink" title="CNI"></a>CNI</h3><p>同样，目前市面上所有的 Kubernetes 集群部署工具中，对 CNI 的支持 kubespray 也无疑是最为丰富的，能支持 9 种 CNI 以及多种 CNI 组合部署的 <a href="https://github.com/intel/multus-cni">multus</a> 。</p>
+<table>
+<thead>
+<tr>
+<th>Addon</th>
+<th>Version</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>calico</td>
+<td>v3.20.3</td>
+</tr>
+<tr>
+<td>flannel</td>
+<td>v0.15.1</td>
+</tr>
+<tr>
+<td>flannel_cni</td>
+<td>v1.0.0</td>
+</tr>
+<tr>
+<td>cni</td>
+<td>v1.0.1</td>
+</tr>
+<tr>
+<td>weave</td>
+<td>2.8.1</td>
+</tr>
+<tr>
+<td>cilium</td>
+<td>v1.9.11</td>
+</tr>
+<tr>
+<td>kube_ovn</td>
+<td>v1.8.1</td>
+</tr>
+<tr>
+<td>kube_router</td>
+<td>v1.3.2</td>
+</tr>
+<tr>
+<td>multus_cni</td>
+<td>0.4.0</td>
+</tr>
+<tr>
+<td>multus</td>
+<td>v3.8</td>
+</tr>
+</tbody></table>
+<h3 id="Kubernetes-app"><a href="#Kubernetes-app" class="headerlink" title="Kubernetes-app"></a>Kubernetes-app</h3><p>同时，kubespray 还支持一些 CLI 工具以及第三方应用的部署。</p>
+<ul>
+<li>CLI 工具</li>
+</ul>
+<p>一些 CLI 工具，比如 helm、nerdctl、krew、crictl。其中 nerdctl 的部署支持是咱在 <a href="https://github.com/kubernetes-sigs/kubespray/pull/7500">#7500</a> 中加入支持的，目的是为 containerd 用户提供一个相对友好的命令行操作体验，以替代 docker CLI。</p>
+<table>
+<thead>
+<tr>
+<th>addon</th>
+<th>version</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>helm</td>
+<td>v3.7.1</td>
+</tr>
+<tr>
+<td>nerdctl</td>
+<td>0.15.0</td>
+</tr>
+<tr>
+<td>krew</td>
+<td>v0.4.2</td>
+</tr>
+<tr>
+<td>crictl</td>
+<td>v1.22.0</td>
+</tr>
+</tbody></table>
+<ul>
+<li>app</li>
+</ul>
+<p>个人感觉部署一些像 <code>dnsautoscaler</code>、 <code>argoCD</code> 这样的应用，还是使用 helm 比较好。因为基于 ansible 的 kubespray 维护这么多第三方组件，以及它们的升级管理都远不如 helm 方便。因此考虑到这些组件的升级维护成本，个人还是不太建议使用 kubespray 来部署这些组件。</p>
+<table>
+<thead>
+<tr>
+<th>Addon</th>
+<th>Version</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>dnsautoscaler</td>
+<td>1.8.5</td>
+</tr>
+<tr>
+<td>netcheck</td>
+<td>v1.2.2</td>
+</tr>
+<tr>
+<td>nodelocaldns</td>
+<td>1.21.1</td>
+</tr>
+<tr>
+<td>metrics_server</td>
+<td>v0.5.0</td>
+</tr>
+<tr>
+<td>cert_manager</td>
+<td>v1.5.4</td>
+</tr>
+<tr>
+<td>addon_resizer</td>
+<td>1.8.11</td>
+</tr>
+<tr>
+<td>cinder_blockstorage</td>
+<td>v3</td>
+</tr>
+<tr>
+<td>external_vsphere</td>
+<td>6.7u3</td>
+</tr>
+<tr>
+<td>nvidia_driver</td>
+<td>390.87</td>
+</tr>
+<tr>
+<td>oci_cloud_controller</td>
+<td>0.7.0</td>
+</tr>
+<tr>
+<td>metallb</td>
+<td>v0.10.3</td>
+</tr>
+<tr>
+<td>argocd</td>
+<td>v2.1.6</td>
+</tr>
+</tbody></table>
+<h2 id="支持的-OS"><a href="#支持的-OS" class="headerlink" title="支持的 OS"></a>支持的 OS</h2><table>
+<thead>
+<tr>
+<th>distribution</th>
+<th>version</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>Amazon Linux</td>
+<td>2</td>
+</tr>
+<tr>
+<td>Fedora CoreOS</td>
+<td>34.x&#x2F;35.x</td>
+</tr>
+<tr>
+<td>Flatcar Container Linux by Kinvolk</td>
+<td></td>
+</tr>
+<tr>
+<td>Alma Linux</td>
+<td>8</td>
+</tr>
+<tr>
+<td>Rocky Linux</td>
+<td>8</td>
+</tr>
+<tr>
+<td>CentOS&#x2F;RHEL</td>
+<td>7&#x2F;8</td>
+</tr>
+<tr>
+<td>Oracle Linux</td>
+<td>7&#x2F;8</td>
+</tr>
+<tr>
+<td>Debian</td>
+<td>8&#x2F;9&#x2F;10&#x2F;11</td>
+</tr>
+<tr>
+<td>Ubuntu</td>
+<td>16.04&#x2F;18.04&#x2F;20.04</td>
+</tr>
+<tr>
+<td>Fedora</td>
+<td>34&#x2F;35</td>
+</tr>
+<tr>
+<td>openSUSE</td>
+<td>Leap 15.x&#x2F;Tumbleweed</td>
+</tr>
+</tbody></table>
+<h2 id="主要变化"><a href="#主要变化" class="headerlink" title="主要变化"></a>主要变化</h2><h3 id="废除"><a href="#废除" class="headerlink" title="废除"></a>废除</h3><ul>
+<li>在 <a href="https://github.com/kubernetes-sigs/kubespray/pull/8086">#8086</a> 中移除了对 Ambassador 的支持；</li>
+<li>在 <a href="https://github.com/kubernetes-sigs/kubespray/pull/8327">#8327</a> 中移除了对 registry-proxy 的支持；</li>
+<li>在 <a href="https://github.com/kubernetes-sigs/kubespray/pull/8246">#8246</a> 中移除了对 Fedora 33 的支持，因为  Fedora 33 在 2021-11-30 就已经 EOL 了，所以被废弃支持也理所当然；</li>
+<li>在 <a href="https://github.com/kubernetes-sigs/kubespray/pull/8265">#8265</a> 中移除了对 Mitogen 的支持，Mitogen 的作用就是用来优化 Ansible 的性能，但 Mitogen 对于一些新的 Linux 发行版支持的额并不是很友好，在 Kubespray 中维护的成本也比较大，因此社区就废弃它了；</li>
+</ul>
+<h3 id="新特性"><a href="#新特性" class="headerlink" title="新特性"></a>新特性</h3><ul>
+<li>在 <a href="https://github.com/kubernetes-sigs/kubespray/pull/7895">#7895</a> 中新增了 ArgoCD 的部署支持，通过设置 <code>argocd_enabled</code> 即可在部署集群的时候安装 ArgoCD。不过个人认为，ArgoCD 这玩意儿不太适合放在 K8s 部署当中来，看看 <a href="https://github.com/kubesphere/ks-installer">ks-installer</a> 的代码你就能明白了 😂。</li>
+<li>在 <a href="https://github.com/kubernetes-sigs/kubespray/pull/8175">#8175</a> 中默认使用 containerd 作为默认的容器运行时，替代掉了 docker。不过需要注意的是，当前版本的 kubespray 是使用 <a href="https://github.com/containerd/containerd">containerd</a> 官方 repo release 的二进制安装包，但二进制安装包并没有 arm64 版本的。所以如果要部署的集群节点包含 arm64 的机器，最好还是使用 docker 作为容器运行时。</li>
+<li>在 <a href="https://github.com/kubernetes-sigs/kubespray/pull/8291">#8291</a> 新增了 registry 部署支持多种 ServiceTypes 的支持；</li>
+<li>在 <a href="https://github.com/kubernetes-sigs/kubespray/pull/8229">#8229</a> 中新增了支持 registry 认证的方式，私有化部署的时候使用带有认证的 registry 会用到；</li>
+</ul>
+<h3 id="已知问题"><a href="#已知问题" class="headerlink" title="已知问题"></a>已知问题</h3><ul>
+<li>在 <a href="https://github.com/kubernetes-sigs/kubespray/pull/8239">#8239</a> 中 <a href="https://github.com/cristicalin">cristicalin</a> 大佬引入了一个修改，如果是 containerd 运行时，则使用 nerdctl 下载镜像。这将会导致配置了 containerd registry mirrors 的参数将会失效。</li>
+</ul>
+]]></content>
+  </entry>
+  <entry>
+    <title>时光痕迹：2021 年总结</title>
+    <url>/2022-01-02-2021.html</url>
+    <content><![CDATA[<p>2021 依旧是人类社会<strong>倒车和加速灭亡</strong>的一年，全球范围内新冠病毒依旧在肆虐，新的变异又接踵而来，疫情并没有多少消退的迹象。而现在国内西安疫情又爆发开来，无法预想未来究竟能变成什么样子。</p>
+<h2 id="阅读"><a href="#阅读" class="headerlink" title="阅读"></a>阅读</h2><p>2021 年 9 月份的时候将书单从原来的 Markdown 文本迁移到了 Notion 上，体验十分棒。Notion 的表格数据库功能十分强大，对书单来说简直就是一件神器。抽空整理了一下书单  <a href="https://reading.k8s.li/">reading.k8s.li</a>  ，2021 年大概读完了 97 本书。其中科普 27 本、漫画 17 本、历史 13 本、政治 11 本、轻小说 8 本、社科 7 本、心理学 5 本、技术 5 本、法律 2 本。之所以能读完这么多书大概是因为如下 😂：</p>
+<ul>
+<li>单身独居，自己一个人生活，没人打扰；</li>
+<li>不喜欢社交，不喜欢群聊闲聊扯淡撕逼；</li>
+<li>不玩游戏不刷短视频，没有其他爱好；</li>
+<li>周末和节假日大多数宅在家里玩儿；</li>
+</ul>
+<p>其中我觉着单身独居是最主要的原因，比如 <a href="https://twitter.com/yihong0618">伊洪</a> 老哥也是如此：</p>
+<p><img src="https://p.k8s.li/image-20220103202406764.png" alt="image-20220103202406764"></p>
+<p>根据个人的喜好，就分享以下 10 本我个人觉着十分有意思的书给大家：</p>
+<p><img src="https://p.k8s.li/image-20220103202406766.png" alt="Snipaste_2021-12-31_19-28-11"></p>
+<p>由于读书笔记的篇幅太长，后面有空的话我会和去年的《<a href="https://blog.k8s.li/2020-booklist.html">2020 年读书笔记和思考</a>》一样，再写一篇 2021 年的读书笔记来分享给大家（大概率是在春节期间写了）。</p>
+<h2 id="工作"><a href="#工作" class="headerlink" title="工作"></a>工作</h2><h3 id="字节跳动"><a href="#字节跳动" class="headerlink" title="字节跳动"></a>字节跳动</h3><p>今年最大的变化就是换了新工作，这也是第二次换工作。本来没有打算离职，但是被迫<del>字节</del>跳动了一年之后，感觉太累了，并没有想象中的那么快乐。</p>
+<p>不得不吐槽一下字节的基础设施做的实在是太烂了，比如镜像仓库各种奇葩的问题。当时还因为这破玩意儿出过版本发布的错误，导致组件编译的 base 镜像出错，后来又不得不重新发布一个版本来擦屁股。</p>
+<p>还有当时 PaaS 容器云平台私有化产品版本发布的时候，领导非得将打包发布的时间点定在临近晚上下班的时候。这就会导致我们组（苦命发版工具人）忙活到晚上十一二点，真的是十分不爽。就是因为一些公共事务没有做好，一些问题在组件自身的 CI&#x2F;CD 流水线中并不能及时暴露，等到最终最后版本发布的时候，各种奇葩的问题突突突地冒出来。比如缺镜像、镜像错误、helm chart 错误、版本错误等。然后出了问题之后又要 @ 各个组件的 owner 去解决问题，它们修改好之后我们再重新打包部署新的环境来验证。每到发版日就十分痛苦，一些基础设施和公共事务没有做好，等到最后我们发版工具人来擦屁股。这让我想起了另一位推友分享的经历：</p>
+<p><img src="https://p.k8s.li/image-20220104082135898.png" alt="image-20220104082135898"></p>
+<h3 id="裸辞离职"><a href="#裸辞离职" class="headerlink" title="裸辞离职"></a>裸辞离职</h3><p>四月底和 leader 绩效沟通完后感觉不太满意于是内心就决定了要离职。不过因为当时一些组织架构的调整，我所做的工作没有一个合适的人来接盘。再加上新产品刚进入设计阶段，新产品平台底层的 K8s 部署以及私有化打包发布相关的工作没有其他人能够 take 起来，最尴尬的是这部分工作当时只有我一个人能完整地做出来。如果在五月底离职的话，可能会对新产品的开发带来一定影响。因此当时考虑了一下，还是等到新产品稳定发版以及把负责的工作交接给新人之后再离开吧。</p>
+<p>就这样自己一个人又重新负责起了整个 PaaS 平台的私有化部署和打包发布相关的工作，这段时间也收获挺多的，顺便给 kubernetes-sig 社区的 kubespray 项目贡献了十几个 <a href="https://github.com/kubernetes-sigs/kubespray/pulls?q=is:pr+author:muzi502+is:closed">PR</a>。等到七月底的时候，新产品已经进入了稳定开发的阶段，在第一个 alpha.1 版本时就搞定了私有化部署和私有化打包的流水线，又经过三个 sprint 的迭代后，终于稳定了下来。之后就整理了一些平时积累的文档，交接给了其他同事，然后办理离职手续走人。</p>
+<p>裸辞的原因也有很多：想走出心理舒适圈，换个环境能让自己成长起来；当时对工作也有了一点厌倦，想好好休息一下；当时的状态也不是很好，如果那时候准备面试的话，感觉效果不太好；很久没有回家了，想在家好好休息一段时间。当时也没有选择休假，而是将所有的假期都折算成双倍工资了，感觉这样更划算一些。如果是休假的话，保不准在休假的时候仍要在飞书上处理一些同事的问题。感觉这样就挺烦人的，所以干脆就直接走人，飞书都没了还怎么联系我。</p>
+<p>离职的第二天就收拾行李回老家，因为老爸的生日快到了，也想尽快回家和家人团聚。</p>
+<p>之后就一直在家划水摸鱼啦，期间花了两周左右的时间完成了两个开源项目：一个是用于构建 yum&#x2F;apt&#x2F;dnf 离线源的工具 <a href="https://github.com/k8sli/os-packages">k8sli&#x2F;os-packages</a> ，以及无网环境中离线部署 k8s 的工具  <a href="https://github.com/k8sli/kubeplay">k8sli&#x2F;kubeplay</a> 。</p>
+<h3 id="面试"><a href="#面试" class="headerlink" title="面试"></a>面试</h3><p>正式开始准备面试是在 9 月初的时候，已经划水摸鱼一个月了，感觉休息的也差不多了。还是赶紧找工作面试吧，在起初的一周是通过一些心仪公司的官网上投递的简历，不幸的是收到的回复很少。当时心里有点慌，写了篇求职《<a href="https://blog.k8s.li/jobs.html">求职贴：运维开发 ｜SRE</a>》介绍了一下自己的现状，终于收到了一些小伙伴们的内推。</p>
+<p><img src="https://p.k8s.li/image-20211231205927088.png" alt="image-20211231205927088"></p>
+<p>在此还是十分感谢帮助我内推的小伙伴，在我即将走投无路的时候有你们的推荐才有了我现在的工作机会。大大小小的面试总共进行了 25 次吧，差不多通过了一半，拿到 4 个书面 offer，最终去了一家做 IaaS 虚拟化和分布式块存储产品的 toB 公司。</p>
+<p>因为之前是在字节跳动做 PaaS toB 产品的集群部署和私有化交付相关工作，在新工作则是做 IaaS toB 产品的集群部署相关工作，都是“集群部署”相关的，因此和以往的经历比较匹配。对于像咱这种喜欢折腾的垃圾佬来说，还是硬件服务器、操作系统、虚拟化、分布式存储等方面的内容比较有意思，玩起来可开心惹 🤣。</p>
+<p>更为重要的一点是新工作不再像以前那样运维技术为主了，而至以后端研发为主。其实我很早之前就想写一些 Go&#x2F;Python 后端项目的代码了，只不过一直没找到一个合适的机会（其实是偷懒的借口 🌚）。在字节的时候也没有太多后端开发的经验，所以当初面试的时候因为开发能力较弱被刷掉了很多，也让一些面试官极其失望。</p>
+<p>幸运的是面试的时候也遇到了一个非常 nice 的公司愿意花时间培养我这方面的能力，leader 也十分信任我的学习能力，让我从零开始承担一个项目的后端开发，给了我这么一个宝贵的机会来学习和弥补开发能力不足的短板。</p>
+<h2 id="生活"><a href="#生活" class="headerlink" title="生活"></a>生活</h2><p>生活上依旧是单身独居，自己一个人生活实在是太爽了，越来越习惯这种生活，好想永远地就这样生活下去，没有催婚的烦恼 😖。独自一个人生活最重要的就是学会<strong>如何对抗虚无</strong>。只要找些有意义的事情来做（比如读书），就不会觉着生活无味或者有空虚感。回想起大学四年，基本上我也是的独自一人去图书馆看书、独自一人吃饭、独自一人去自习室，感觉和现在没有太多差别，只不过从上课学习换成了工作搬砖，其他时间的生活节奏基本上没有太大的变化。</p>
+<p>还有一点就是尽量的远离社交媒体，不要过度地依赖它们，更不要放纵自己不停地刷推或者短视频来娱乐消遣。其实这些东西并不能给我们带来真正意义上的快乐，有一部纪录片《<a href="https://www.netflix.com/sg-zh/title/81254224">监视资本主义：智能陷阱</a>》里面也谈到过过度依赖社交媒体的后果。</p>
+<h3 id="杭州过年"><a href="#杭州过年" class="headerlink" title="杭州过年"></a>杭州过年</h3><p>因为疫情的原因 2021 年就没回家过年，再加上越是农村那种破地方防疫措施就是越离谱，看看现在西安的防疫措施你们就能明白了为什么不想回家。于是就懒得折腾，选择独自一人留在杭州过年，顺便还能领取杭州市政府的留杭补贴 1000 块钱。杭州市在这一块做的还真不错，去年还领了人才补贴的 1w 块钱，从老大哥手里薅羊毛，真鸡儿刺激。</p>
+<h3 id="环太湖骑行"><a href="#环太湖骑行" class="headerlink" title="环太湖骑行"></a>环太湖骑行</h3><p>为了不让五一假期再像过年那样一直烂在家里，就独自一人从杭州骑行到湖州、常州、无锡、苏州、太湖一带游玩，真的是很久没有那么开心过了。回来之后还更新了一篇博客《<a href="https://blog.k8s.li/taihu.html">五一假期环太湖骑行之旅</a>》，旅程的风景真的不错，感兴趣的话可以去读一下。</p>
+<h3 id="上海租房"><a href="#上海租房" class="headerlink" title="上海租房"></a>上海租房</h3><p>新工作的办公地点是在上海，因为不支持远程办公所以不得不从杭州搬家来到上海。在中介老哥的带领下找了一个月租 3100 元的卧室 + 独卫的房子（包水电费），整体感觉十分满意。房子比较特殊，是三室一厅。我住在其中的一个大卧室，房东他父母住在另一个卧室，剩余的一个卧室是空着的，除了我以外没有其他的租客。出于对老人安全的考虑，房东只允许我自己一个人住，不能带外人来。对我来说也没啥，独来独往的生活反正也不会有其他人来找我玩儿。</p>
+<p>卧室面积 3.3 * 4.3m&#x3D;14.19 平、玄关 1.1 * 1m&#x3D;1.1 平、卫生间 2.3 * 2.1m&#x3D;4.38 平。加起来总共差不多 20 平。感觉这个面积感觉比杭州那个带阳台的卧室大很多。一个 1.5 * 2m 的床、靠墙再放置两张 60* 120 cm 的宜家桌子、床的右侧又能放下一张 0.6 * 1.4m 米的书桌，还有一个 0.5 *2m 的衣柜。</p>
+<p>现在终于住上了自己所期待的那种房子，回想起大学刚毕业那一年住的还是 300 块钱的上下铺青旅，就感觉当时十分寒酸 😭。</p>
+<p><img src="https://p.k8s.li/image-20220103165850671.png" alt="image-20220103165850671"></p>
+<p>房间里还有一个带书架的电脑桌，放下一个 27 寸的显示器刚刚好。另外把我那台 HPE Gen10 Plus 服务器安置在了书桌下面。虽然靠近床头，但 NAS 里硬盘的噪音还算能接受，不至于吵得睡不着觉。有时候在想要不要整个 12U 的机柜来着，但规划了一下感觉还是没有太大的必要，先这样凑活着用吧。</p>
+<p><img src="https://p.k8s.li/image-20220103202406765.jpg" alt="IMG_2177"></p>
+<p>搬进来之后的第二天在闲鱼上花了 300 块钱捡来了一个原价 1699 的米家扫地机器人，又花了 200 块钱捡了一个米家空气净化器（贫穷如我，只能靠捡和薅来提升生活幸福感了）。感觉这两个家用电器还是挺值的，扫地机器人省去了打扫卫生的麻烦事儿，生活幸福感 +++。</p>
+<h2 id="2022"><a href="#2022" class="headerlink" title="2022"></a>2022</h2><p>就像作家方方所说的那样：<a href="http://fangfang.blog.caixin.com/archives/220746">时代的一粒灰，落在个人头上就是一座山</a> 。外婆在 2020 年新冠疫情刚爆发的那段时间不幸离开了这个世界，而那段时间的经历也彻底改变了我看待生死的想法。仿佛一切都没有那么重要了，也让我深刻地明白了<strong>这个世界上没有什么东西无法不能失去的，也没有什么非得必须要得到的</strong>。即便是某一天我不幸去世，也没有太多遗憾和悔恨。所以去他的未来计划，和往常一样好好搬砖工作和看书学习，这样就够了。</p>
+<p>另外祝大家新的一年快快乐乐 🥳</p>
+]]></content>
+  </entry>
+  <entry>
+    <title>使用 overlay2 或 bind 重新构建 ISO 镜像</title>
+    <url>/2022-01-25-rebuild-iso-image.html</url>
+    <content><![CDATA[<p>笔者之前在字节跳动的时候是负责 PaaS 容器云平台的私有化部署相关的工作，所以经常会和一些容器镜像打交道，对容器镜像也有一些研究，之前还写过不少博客文章。比如 <a href="https://blog.k8s.li/Exploring-container-image.html">深入浅出容器镜像的一生 🤔</a>、<a href="https://blog.k8s.li/overlay2-on-package-pipline.html">overlay2 在打包发布流水线中的应用</a> 等等。</p>
+<p>自从换了新工作之后，则开始负责 <a href="https://www.smartx.com/smartx-hci/">超融合产品</a> 集群部署相关工作，因此也会接触很多 <code>镜像</code>，不过这个镜像是操作系统的 ISO 镜像而不是容器镜像 😂。虽然两者都统称为镜像，但两者有着本质的区别。</p>
+<p>首先两者构建的方式有本质的很大的区别，ISO 镜像一般使用 <code>mkisofs</code> 或者 <code>genisoimage</code> 等命令将一个包含操作系统安装所有文件目录构建为一个 ISO 镜像；而容器镜像构建则是根据 <code>Dockerfile</code> 文件使用相应的容器镜像构建工具来一层一层构建；</p>
+<p>另外 ISO 镜像挂载后是只读的，这就意味着如果想要修改 ISO 镜像中的一个文件（比如 kickstart 文件），则需要先将 ISO 镜像中的所有内容负责到一个可以读写的目录中，在这个读写的目录中进行修改和重新构建 ISO 操作。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">╭─root@esxi-debian-devbox ~/build
+╰─<span class="token comment"># mount -o loop CentOS-7-x86_64-Minimal-2009.iso /mnt/iso</span>
+mount: /mnt/iso: WARNING: device write-protected, mounted read-only.
+╭─root@esxi-debian-devbox ~/build
+╰─<span class="token comment"># touch /mnt/iso/kickstart.cfg</span>
+touch: cannot <span class="token function">touch</span> <span class="token string">'/mnt/iso/kickstart.cfg'</span><span class="token builtin class-name">:</span> Read-only <span class="token function">file</span> system<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>在日常工作中经常会对一些已有的 ISO 镜像进行重新构建，重新构建 ISO 的效率根据不同的方式也会有所不同，本文就整理了三种不同重新构建 ISO 镜像的方案供大家参考。</p>
+<h2 id="常规方式"><a href="#常规方式" class="headerlink" title="常规方式"></a>常规方式</h2><p>以下是按照 RedHat 官方文档 <a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/anaconda_customization_guide/sect-iso-images"> WORKING WITH ISO IMAGES</a> 中的操作步骤进行 ISO 重新构建。</p>
+<ul>
+<li>首先我们下载一个 ISO 文件，这里以 <a href="https://mirrors.tuna.tsinghua.edu.cn/centos/7.9.2009/isos/x86_64/CentOS-7-x86_64-Minimal-2009.iso">CentOS-7-x86_64-Minimal-2009.iso</a> 为例，下载好之后将它挂载到本地 <code>/mn/iso</code> 目录下；</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">╭─root@esxi-debian-devbox ~/build
+╰─<span class="token comment"># mount -o loop CentOS-7-x86_64-Minimal-2009.iso /mnt/iso</span>
+mount: /mnt/iso: WARNING: device write-protected, mounted read-only.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>将 ISO 里的所有文件复制到另一个目录</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">╭─root@esxi-debian-devbox ~/build
+╰─<span class="token comment"># rsync -avrut --force /mnt/iso/ /mnt/build/</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<ul>
+<li>进入到该目录下修改或新增文件，然后重新构建 ISO 镜像</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 使用 genisoimage 命令构建 ISO 镜像，在 CentOS 上可以使用 mkisofs 命令，参数上会有一些差异</span>
+╭─root@esxi-debian-devbox ~/build
+╰─<span class="token comment"># genisoimage -U -r -v -T -J -joliet-long -V "CentOS 7 x86_64" -volset "CentOS 7 x86_64" -A "CentOS 7 x86_64" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -no-emul-boot -o /mnt/CentOS-7-x86_64-Minimal-2009-dev.iso .</span>
+Total translation table size: <span class="token number">124658</span>
+Total rockridge attributes bytes: <span class="token number">55187</span>
+Total directory bytes: <span class="token number">100352</span>
+Path table size<span class="token punctuation">(</span>bytes<span class="token punctuation">)</span>: <span class="token number">140</span>
+Done with: The File<span class="token punctuation">(</span>s<span class="token punctuation">)</span>                             Block<span class="token punctuation">(</span>s<span class="token punctuation">)</span>    <span class="token number">527985</span>
+Writing:   Ending Padblock                         Start Block <span class="token number">528101</span>
+Done with: Ending Padblock                         Block<span class="token punctuation">(</span>s<span class="token punctuation">)</span>    <span class="token number">150</span>
+Max brk space used a4000
+<span class="token number">528251</span> extents written <span class="token punctuation">(</span><span class="token number">1031</span> MB<span class="token punctuation">)</span>
+<span class="token comment"># 给 ISO 镜像生成 md5 校验</span>
+╭─root@esxi-debian-devbox ~/build
+╰─<span class="token comment"># implantisomd5 /mnt/CentOS-7-x86_64-Minimal-2009-dev.iso</span>
+Inserting md5sum into iso image<span class="token punctuation">..</span>.
+md5 <span class="token operator">=</span> 9ddf5277bcb1d8679c367dfa93f9b162
+Inserting fragment md5sums into iso image<span class="token punctuation">..</span>.
+fragmd5 <span class="token operator">=</span> f39e2822ec1ae832a69ae399ea4bd3e891eeb31e9deb9c536f529c15bbeb
+frags <span class="token operator">=</span> <span class="token number">20</span>
+Setting supported flag to <span class="token number">0</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>对于 ISO 镜像比较小或者该操作不是很频繁的情况下按照这种方式是最省事儿的，但如果是 ISO 镜像比较大，或者是在 CI&#x2F;CD 流水线中频繁地重新构建镜像，每次都要 cp 复制原 ISO 镜像的内容确实比较浪费时间。那有没有一个更加高效的方法呢 🤔️</p>
+<p>经过一番摸索，折腾出来两种可以避免使用 cp 复制这种占用大量 IO 操作的构建方案，可以根据不同的场景进行选择。</p>
+<h2 id="overlay2"><a href="#overlay2" class="headerlink" title="overlay2"></a>overlay2</h2><p>熟悉 docker 镜像的应该都知道镜像是只读的，使用镜像的时候则是通过联合挂载的方式将镜像的每一层 layer 挂载为只读层，将容器实际运行的目录挂载为读写层，而容器运行期间在读写层的所有操作不会影响到镜像原有的内容。容器镜像挂载的方式使用最多的是 overlay2 技术，在 <a href="https://blog.k8s.li/overlay2-on-package-pipline.html">overlay2 在打包发布流水线中的应用</a> 和 <a href="https://blog.k8s.li/Exploring-container-image.html">深入浅出容器镜像的一生 🤔</a> 中咱曾对它进行过比较深入的研究和使用，对 overlay2 技术感兴趣的可以翻看一下这两篇博客，本文就不再详解其中的技术原理了，只对使用 overlay2 技术重新构建 ISO 镜像的可行性进行一下分析。</p>
+<ul>
+<li>首先是创建 overlay2 挂载所需要的几个目录</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">╭─root@esxi-debian-devbox ~
+╰─<span class="token comment"># mkdir -p /mnt/overlay2/&#123;lower,upper,work,merged&#125;</span>
+╭─root@esxi-debian-devbox ~
+╰─<span class="token comment"># cd /mnt/overlay2</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>接着将 ISO 镜像挂载到 overlay2 的只读层 <code>lower</code> 目录</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">╭─root@esxi-debian-devbox /mnt/overlay2
+╰─<span class="token comment"># mount -o loop  /root/build/CentOS-7-x86_64-Minimal-2009.iso lower</span>
+mount: /mnt/overlay2/lower: WARNING: device write-protected, mounted read-only.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>使用 mount 命令挂载 overlay2 文件系统，挂载点为 <code>merged</code> 目录</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">╭─root@esxi-debian-devbox /mnt/overlay2
+╰─<span class="token comment"># mount -t overlay overlay -o lowerdir=lower,upperdir=upper,workdir=work merged</span>
+╭─root@esxi-debian-devbox /mnt/overlay2
+╰─<span class="token comment"># cd merged</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>新增一个 kickstart.cfg 文件，然后重新构建 ISO 镜像</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">╭─root@esxi-debian-devbox /mnt/overlay2/merged
+╰─<span class="token comment"># echo '# this is a kickstart config file' > kickstart.cfg</span>
+╭─root@esxi-debian-devbox /mnt/overlay2/merged
+╰─<span class="token comment"># genisoimage -U -r -v -T -J -joliet-long -V "CentOS 7 x86_64" -volset "CentOS 7 x86_64" -A "CentOS 7 x86_64" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -no-emul-boot -o /mnt/CentOS-7-x86_64-Minimal-2009-dev.iso .</span>
+Total translation table size: <span class="token number">124658</span>
+Total rockridge attributes bytes: <span class="token number">55187</span>
+Total directory bytes: <span class="token number">100352</span>
+Path table size<span class="token punctuation">(</span>bytes<span class="token punctuation">)</span>: <span class="token number">140</span>
+Done with: The File<span class="token punctuation">(</span>s<span class="token punctuation">)</span>                             Block<span class="token punctuation">(</span>s<span class="token punctuation">)</span>    <span class="token number">527985</span>
+Writing:   Ending Padblock                         Start Block <span class="token number">528101</span>
+Done with: Ending Padblock                         Block<span class="token punctuation">(</span>s<span class="token punctuation">)</span>    <span class="token number">150</span>
+Max brk space used a4000
+<span class="token number">528251</span> extents written <span class="token punctuation">(</span><span class="token number">1031</span> MB<span class="token punctuation">)</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>挂载新的 ISO 镜像验证后发现确实可行</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">╭─root@esxi-debian-devbox /mnt/overlay2/merged
+╰─<span class="token comment"># mount -o loop /mnt/CentOS-7-x86_64-Minimal-2009-dev.iso /mnt/newiso</span>
+mount: /mnt/newiso: WARNING: device write-protected, mounted read-only.
+╭─root@esxi-debian-devbox /mnt/overlay2/merged
+╰─<span class="token comment"># cat /mnt/newiso/kickstart.cfg</span>
+<span class="token comment"># this is a kickstart config file</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="mount-–bind"><a href="#mount-–bind" class="headerlink" title="mount –bind"></a>mount –bind</h2><p>前面讲到了使用 overlay2 的方式避免复制原镜像内容进行重新构建镜像的方案，但是 overlay2 对于不是很熟悉的人来讲还是比较复杂，光 lowerdir、upperdir、workdir、mergeddir 这四个文件夹的作用和原理就把人直接给整不会了。那么还有没有更为简单一点的方式呢？</p>
+<p>别说还真有，只不过这种方式的用途比较局限。如果仅仅是用于修改 ISO 中的一个文件或者目录，可以将该文件或目录以 <code>bind</code> 挂载的方式将它挂载到 ISO 目录目录对应的文件上。</p>
+<p>原理就是虽然 ISO 目录本身是只读的，但它里面的文件和目录是可以作为一个挂载点的。也就是说我把文件 A 挂载到文件 B，并不是在修改文件 B，这就是 Unix&#x2F;Linux 文件系统十分奇妙的地方。同样运用 bind 挂载的还有 docker 的 volume 以及 pod 的 volume 也是运用同样的原理，以 bind 的方式将宿主机上的目录或文件挂载到容器运行对应的目录上。对于修改只读 ISO 里的文件&#x2F;目录我们当然也可以这样做。废话不多说来实践验证一下：</p>
+<ul>
+<li>首先依旧是将 ISO 镜像挂载到 <code>/mn/iso</code> 目录</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">╭─root@esxi-debian-devbox ~/build
+╰─<span class="token comment"># mount -o loop CentOS-7-x86_64-Minimal-2009.iso /mnt/iso</span>
+mount: /mnt/iso: WARNING: device write-protected, mounted read-only.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>接着创建一个 <code>/mnt/files/ks.cfg</code> 文件，并写入我们需要的内容</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">╭─root@esxi-debian-devbox ~/build
+╰─<span class="token comment"># mkdir -p /mnt/files</span>
+╭─root@esxi-debian-devbox ~/build
+╰─<span class="token comment"># echo '# this is a kickstart config file' > /mnt/files/ks.cfg</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>接着以 mount –bind 的方式挂载新建的文件到 ISO 的 EULA 文件</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">╭─root@esxi-debian-devbox /mnt/build
+╰─<span class="token comment"># mount --bind /mnt/files/ks.cfg /mnt/iso/EULA</span>
+╭─root@esxi-debian-devbox /mnt/build
+╰─<span class="token comment"># cat /mnt/iso/EULA</span>
+<span class="token comment"># this is a kickstart config file</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>可以看到原来 ISO 文件中的 EULA 文件已经被成功替换成了我们修改的文件，然后再重新构建一下该 ISO 镜像</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">╭─root@esxi-debian-devbox /mnt/iso
+╰─<span class="token comment"># genisoimage -U -r -v -T -J -joliet-long -V "CentOS 7 x86_64" -volset "CentOS 7 x86_64" -A "CentOS 7 x86_64" -b isolinux/isolinux.bin -c isolinux/boot.cat -no-emul-boot -boot-load-size 4 -boot-info-table -no-emul-boot -o /mnt/CentOS-7-x86_64-Minimal-2009-dev.iso .</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<ul>
+<li>然后我们再重新挂载新的 ISO 文件验证一下是否可以</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">╭─root@esxi-debian-devbox /mnt/iso
+╰─<span class="token comment"># mkdir /mnt/newiso</span>
+╭─root@esxi-debian-devbox /mnt/iso
+╰─<span class="token comment"># mount -o loop /mnt/CentOS-7-x86_64-Minimal-2009-dev.iso /mnt/newiso</span>
+mount: /mnt/newiso: WARNING: device write-protected, mounted read-only.
+╭─root@esxi-debian-devbox /mnt/iso
+╰─<span class="token comment"># cat /mnt/newiso/EULA</span>
+<span class="token comment"># this is a kickstart config file</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>验证通过，确实可以！不过这种方式很局限，比较适用于修改单个文件如 <code>kickstart.cfg</code>，如果是要新增文件那还是使用上文提到的 overlay2 的方式更为方便一些。</p>
+<h2 id="收获"><a href="#收获" class="headerlink" title="收获"></a>收获</h2><p>虽然 ISO 镜像和容器镜像二者有着本质的差别，但对于只读和联合挂载的这些特性二者可以相互借鉴滴。</p>
+<p>不止如此 overlay2 这种联合挂载的特性，还可以用在其他地方。比如我有一个公共的 NFS 共享服务器，共享着一些目录，所有人都可以以 root 用户并以读写的权限进行 NFS 挂载。这种情况下很难保障一些重要的文件和数据被误删。这时候就可以使用 overlay2 的方式将一些重要的文件数据挂载为 overlay2 的 lowerdir 只读层，保证这些数据就如容器镜像一样，每次挂载使用的时候都作为一个只读层。所有的读写操作都在 overlay2 的 merged 那一层，不会真正影响到只读层的内容。</p>
+<p>草草地水了一篇博客，是不是没有用的知识又增加了 😂</p>
+<h2 id="推荐阅读"><a href="#推荐阅读" class="headerlink" title="推荐阅读"></a>推荐阅读</h2><ul>
+<li><a href="https://www.kernel.org/doc/Documentation/filesystems/overlayfs.txt">overlayfs.txt</a></li>
+<li><a href="https://arkingc.github.io/2017/05/05/2017-05-05-docker-filesystem-overlay/">Docker 存储驱动—Overlay&#x2F;Overlay2「译」</a></li>
+<li><a href="https://blog.k8s.li/Exploring-container-image.html">深入浅出容器镜像的一生 🤔</a></li>
+<li><a href="https://zdyxry.github.io/2019/01/12/%E8%81%8A%E4%B8%80%E8%81%8A-ISO-9660/">聊一聊 ISO 9660</a></li>
+<li><a href="https://access.redhat.com/documentation/en-us/red_hat_enterprise_linux/7/html/anaconda_customization_guide/sect-iso-images">WORKING WITH ISO IMAGES</a></li>
+<li><a href="https://blog.k8s.li/overlay2-on-package-pipline.html">overlay2 在打包发布流水线中的应用</a></li>
+<li><a href="https://blog.k8s.li/mount-bind.html">mount 命令之 –bind 挂载参数</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>overlay2</tag>
+        <tag>ISO</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>使用 kubectl 自动归档 argo workflow 日志</title>
+    <url>/2022-02-28-archive-argo-workflow-log-by-kubectl.html</url>
+    <content><![CDATA[<p>项目上使用到 <a href="https://github.com/argoproj/argo-workflows">argo-workflow</a> 作为工作流引擎来编排运行一些 <a href="https://www.smartx.com/solution/virtualization/">超融合</a> 集群部署相关的任务，整套环境运行在一个单节点的 K3s 上。之所以选择 argo-workflow + K3s 的搭配主要是想尽可能少地占用系统资源，因为这套环境将来会运行在各种硬件配置不同的笔记本电脑上 😂。综合调研了一些常见的 K8s 部署工具最终就选择了系统资源占用较少的 K3s。</p>
+<p>现在项目的一个需求就是在集群部署完成或失败之后需要将 workflow 的日志归档保存下来。虽然可以在 workflow 的 spec 字段中使用 <code>archiveLogs: true</code> 来让 argo 帮我们自动归档日志，但这个特性依赖于一个 S3 对象存储 <a href="https://argoproj.github.io/argo-workflows/configure-artifact-repository/">Artifact Repository</a> 。这就意味着还要再部署一个支持 S3 对象存储的组件比如 <a href="https://min.io/">Minio</a> ，直接把我给整不会了 🌚</p>
+<p><img src="https://p.k8s.li/2021-08-31-pass-tob-k8s-offline-deploy-2.jpeg"></p>
+<p>其实嘛这个需求很简单的，我就想保存一个日志文件而已，你还再让我安装一个 <a href="https://min.io/">Minio</a>，实在是太过分了！本来系统的资源十分有限，需要尽可能减少安装一些不必要依赖，为的就是将资源利用率将到最低。但现在为了归档存储一个日志文件储而大动干戈装一个 minio 实在是不划算。这就好比你费了好大功夫部署一套 3 节点的 kubernetes 集群，然而就为了运行一个静态博客那样滑稽 😂</p>
+
+
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr">Deployed my blog on Kubernetes <a href="https://t.co/XHXWLrmYO4">pic.twitter.com/XHXWLrmYO4</a></p>&mdash; For DevOps Eyes Only (@dexhorthy) <a href="https://twitter.com/dexhorthy/status/856639005462417409?ref_src=twsrc%5Etfw">April 24, 2017</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+
+<p>对于咱这种 <code>用不起</code> S3 对象存储的穷人家孩子，还是想一些其他办法吧，毕竟自己动手丰衣足食。</p>
+<h2 id="kubectl"><a href="#kubectl" class="headerlink" title="kubectl"></a>kubectl</h2><p>实现起来也比较简单，对于咱这种 YAML 工程师来说，kubectl 自然再熟悉不过了。想要获取 workflow 的日志，只需要通过 kubectl logs 命令获取出 workflow 所创的 pod 日志就行了呀，要什么 S3 对象存储 😖</p>
+<h3 id="筛选-pod"><a href="#筛选-pod" class="headerlink" title="筛选 pod"></a>筛选 pod</h3><p>对于同一个 workflow 来将，每个 stage 所创建出来的 pod name 有一定的规律。在定义 workflow 的时候，<a href="https://argoproj.github.io/argo-workflows/fields/#objectmeta">generateName</a> 参数通常使用 <code>$&#123;name&#125;-</code> 格式。以 <code>-</code> 作为分隔符，最后一个字段是随机生成的一个数字 ID，倒数第二个字段则是 argo 随机生成的 workflow ID，剩余前面的字符则是我们定义的 generateName。</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> argoproj.io/v1alpha1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Workflow
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">generateName</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test<span class="token punctuation">-</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">archive-log-test-jzt8n-3498199655                          <span class="token number">0</span>/2     Completed   <span class="token number">0</span>               4m18s
+archive-log-test-jzt8n-3618624526                          <span class="token number">0</span>/2     Completed   <span class="token number">0</span>               4m8s
+archive-log-test-jzt8n-2123203324                          <span class="token number">0</span>/2     Completed   <span class="token number">0</span>               3m58s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>在 pod 的 labels 中同样也包含着该 workflow 所对应的 ID，因此我们可以根据此 labels 过滤出该 workflow 所创建出来的 pod。</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Pod
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+    <span class="token key atrule">workflows.argoproj.io/node-id</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test<span class="token punctuation">-</span>jzt8n<span class="token punctuation">-</span><span class="token number">3498199655</span>
+    <span class="token key atrule">workflows.argoproj.io/node-name</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test<span class="token punctuation">-</span>jzt8n<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>.list<span class="token punctuation">-</span>default<span class="token punctuation">-</span>running<span class="token punctuation">-</span>pods
+  <span class="token key atrule">creationTimestamp</span><span class="token punctuation">:</span> <span class="token string">"2022-02-28T12:53:32Z"</span>
+  <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+    <span class="token key atrule">workflows.argoproj.io/completed</span><span class="token punctuation">:</span> <span class="token string">"true"</span>
+    <span class="token key atrule">workflows.argoproj.io/workflow</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test<span class="token punctuation">-</span>jzt8n
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test<span class="token punctuation">-</span>jzt8n<span class="token punctuation">-</span><span class="token number">3498199655</span>
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> default
+  <span class="token key atrule">ownerReferences</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> argoproj.io/v1alpha1
+    <span class="token key atrule">blockOwnerDeletion</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+    <span class="token key atrule">controller</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+    <span class="token key atrule">kind</span><span class="token punctuation">:</span> Workflow
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test<span class="token punctuation">-</span>jzt8n
+    <span class="token key atrule">uid</span><span class="token punctuation">:</span> e91df2cb<span class="token punctuation">-</span>b567<span class="token punctuation">-</span>4cf0<span class="token punctuation">-</span>9be5<span class="token punctuation">-</span>3dd6c72854cd
+  <span class="token key atrule">resourceVersion</span><span class="token punctuation">:</span> <span class="token string">"1251330"</span>
+  <span class="token key atrule">uid</span><span class="token punctuation">:</span> ce37a709<span class="token punctuation">-</span>8236<span class="token punctuation">-</span>445b<span class="token punctuation">-</span>8d00<span class="token punctuation">-</span>a7926fa18ed0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>通过 <code>-l lables</code> 过滤出一个 workflow 所创建的 pod；通过 <code>--sort-by</code> 以创建时间进行排序；通过 <code>-o name</code> 只输出 pod 的 name：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ kubectl get pods -l workflows.argoproj.io/workflow<span class="token operator">=</span>archive-log-test-jzt8n --sort-by<span class="token operator">=</span><span class="token string">'.metadata.creationTimestamp'</span> -o name
+pod/archive-log-test-jzt8n-3498199655
+pod/archive-log-test-jzt8n-3618624526
+pod/archive-log-test-jzt8n-2123203324<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="获取日志"><a href="#获取日志" class="headerlink" title="获取日志"></a>获取日志</h3><p>通过上面的步骤我们就可以获取到一个 workflow 所创建的 pod 列表。然后再通过 kubectl logs 命令获取 pod 中 main 容器的日志，为方便区分日志的所对应的 workflow ，我们就以 workflow 的 ID 为前缀名。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ kubectl logs archive-log-test-jzt8n-3618624526 -c main<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token assign-left variable">LOG_PATH</span><span class="token operator">=</span>/var/log
+<span class="token assign-left variable">NAME</span><span class="token operator">=</span>archive-log-test-jzt8n
+kubectl get pods -l workflows.argoproj.io/workflow<span class="token operator">=</span><span class="token variable">$&#123;NAME&#125;</span> <span class="token punctuation">\</span>
+--sort-by<span class="token operator">=</span><span class="token string">'.metadata.creationTimestamp'</span> -o name <span class="token punctuation">\</span>
+<span class="token operator">|</span> <span class="token function">xargs</span> -I <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span> -t kubectl logs <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span> -c main <span class="token operator">>></span> <span class="token variable">$&#123;LOG_PATH&#125;</span>/<span class="token variable">$&#123;NAME&#125;</span>.log<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="workflow"><a href="#workflow" class="headerlink" title="workflow"></a>workflow</h3><p>根据 argo-workflow 官方提供的 <a href="https://github.com/argoproj/argo-workflows/blob/master/examples/exit-handlers.yaml"><strong>exit-handlers.yaml</strong></a> example，我们就照葫芦画瓢搓一个 workflow 退出后自动调用使用 kubectl 获取 workflow 日志的一个 step，定义的 exit-handler 内容如下：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml">  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> exit<span class="token punctuation">-</span>handler
+    <span class="token key atrule">container</span><span class="token punctuation">:</span>
+      <span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token string">"kubectl"</span>
+      <span class="token key atrule">image</span><span class="token punctuation">:</span> lachlanevenson/k8s<span class="token punctuation">-</span>kubectl<span class="token punctuation">:</span>v1.23.2
+      <span class="token key atrule">command</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> sh
+        <span class="token punctuation">-</span> <span class="token punctuation">-</span>c
+        <span class="token punctuation">-</span> <span class="token punctuation">|</span><span class="token scalar string">
+          kubectl get pods -l workflows.argoproj.io/workflow=$&#123;POD_NAME%-*&#125; \
+          --sort-by=".metadata.creationTimestamp" -o name | grep -v $&#123;POD_NAME&#125; \
+          | xargs -I &#123;&#125; -t kubectl logs &#123;&#125; -c main >> $&#123;LOG_PATH&#125;/$&#123;POD_NAME%-*&#125;.log</span>
+      <span class="token key atrule">env</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> POD_NAME
+          <span class="token key atrule">valueFrom</span><span class="token punctuation">:</span>
+            <span class="token key atrule">fieldRef</span><span class="token punctuation">:</span>
+              <span class="token key atrule">fieldPath</span><span class="token punctuation">:</span> metadata.name
+        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> LOG_PATH
+          <span class="token key atrule">value</span><span class="token punctuation">:</span> /var/log/workflow
+      <span class="token key atrule">resources</span><span class="token punctuation">:</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+      <span class="token key atrule">volumeMounts</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nfs<span class="token punctuation">-</span>datastore
+          <span class="token key atrule">mountPath</span><span class="token punctuation">:</span> /var/log/workflow
+    <span class="token key atrule">retryStrategy</span><span class="token punctuation">:</span>
+      <span class="token key atrule">limit</span><span class="token punctuation">:</span> <span class="token string">"5"</span>
+      <span class="token key atrule">retryPolicy</span><span class="token punctuation">:</span> OnFailure
+<span class="token key atrule">entrypoint</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test
+<span class="token key atrule">serviceAccountName</span><span class="token punctuation">:</span> default
+<span class="token key atrule">volumes</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nfs<span class="token punctuation">-</span>datastore
+    <span class="token key atrule">nfs</span><span class="token punctuation">:</span>
+      <span class="token key atrule">server</span><span class="token punctuation">:</span> NFS_SERVER
+      <span class="token key atrule">path</span><span class="token punctuation">:</span> /data/workflow/log
+<span class="token key atrule">onExit</span><span class="token punctuation">:</span> exit<span class="token punctuation">-</span>handler<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>将上述定义的 <code>exit-handler</code> 内容复制粘贴到你的 workflow spec 配置中就可以。由于日志需要持久化存储，我这里使用的是 NFS 存储，也可以根据自己的需要换成其他存储，只需要修改一下 <code>volumes</code> 配置即可。</p>
+<p>完整的 <a href="https://gist.github.com/muzi502/9b26c6854c509c42ecd7f7004436ca23">workflow example</a> 如下：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> argoproj.io/v1alpha1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Workflow
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">generateName</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test<span class="token punctuation">-</span>
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> default
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">templates</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test
+      <span class="token key atrule">steps</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> list<span class="token punctuation">-</span>default<span class="token punctuation">-</span>running<span class="token punctuation">-</span>pods
+            <span class="token key atrule">template</span><span class="token punctuation">:</span> kubectl
+            <span class="token key atrule">arguments</span><span class="token punctuation">:</span>
+              <span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+                <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> namespace
+                  <span class="token key atrule">value</span><span class="token punctuation">:</span> default
+        <span class="token punctuation">-</span> <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> list<span class="token punctuation">-</span>kube<span class="token punctuation">-</span>system<span class="token punctuation">-</span>running<span class="token punctuation">-</span>pods
+            <span class="token key atrule">template</span><span class="token punctuation">:</span> kubectl
+            <span class="token key atrule">arguments</span><span class="token punctuation">:</span>
+              <span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+                <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> namespace
+                  <span class="token key atrule">value</span><span class="token punctuation">:</span> kube<span class="token punctuation">-</span>system
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> kubectl
+      <span class="token key atrule">inputs</span><span class="token punctuation">:</span>
+        <span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> namespace
+      <span class="token key atrule">container</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token string">"kubectl"</span>
+        <span class="token key atrule">image</span><span class="token punctuation">:</span> lachlanevenson/k8s<span class="token punctuation">-</span>kubectl<span class="token punctuation">:</span>v1.23.2
+        <span class="token key atrule">command</span><span class="token punctuation">:</span>
+          <span class="token punctuation">-</span> sh
+          <span class="token punctuation">-</span> <span class="token punctuation">-</span>c
+          <span class="token punctuation">-</span> <span class="token punctuation">|</span><span class="token scalar string">
+            kubectl get pods --field-selector=status.phase=Running -n &#123;&#123;inputs.parameters.namespace&#125;&#125;</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> exit<span class="token punctuation">-</span>handler
+      <span class="token key atrule">container</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token string">"kubectl"</span>
+        <span class="token key atrule">image</span><span class="token punctuation">:</span> lachlanevenson/k8s<span class="token punctuation">-</span>kubectl<span class="token punctuation">:</span>v1.23.2
+        <span class="token key atrule">command</span><span class="token punctuation">:</span>
+          <span class="token punctuation">-</span> sh
+          <span class="token punctuation">-</span> <span class="token punctuation">-</span>c
+          <span class="token punctuation">-</span> <span class="token punctuation">|</span><span class="token scalar string">
+            kubectl get pods -l workflows.argoproj.io/workflow=$&#123;POD_NAME%-*&#125; \
+            --sort-by=".metadata.creationTimestamp" -o name | grep -v $&#123;POD_NAME&#125; \
+            | xargs -I &#123;&#125; -t kubectl logs &#123;&#125; -c main >> $&#123;LOG_PATH&#125;/$&#123;POD_NAME%-*&#125;.log</span>
+        <span class="token key atrule">env</span><span class="token punctuation">:</span>
+          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> POD_NAME
+            <span class="token key atrule">valueFrom</span><span class="token punctuation">:</span>
+              <span class="token key atrule">fieldRef</span><span class="token punctuation">:</span>
+                <span class="token key atrule">fieldPath</span><span class="token punctuation">:</span> metadata.name
+          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> LOG_PATH
+            <span class="token key atrule">value</span><span class="token punctuation">:</span> /var/log/workflow
+        <span class="token key atrule">resources</span><span class="token punctuation">:</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+        <span class="token key atrule">volumeMounts</span><span class="token punctuation">:</span>
+          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nfs<span class="token punctuation">-</span>datastore
+            <span class="token key atrule">mountPath</span><span class="token punctuation">:</span> /var/log/workflow
+      <span class="token key atrule">retryStrategy</span><span class="token punctuation">:</span>
+        <span class="token key atrule">limit</span><span class="token punctuation">:</span> <span class="token string">"5"</span>
+        <span class="token key atrule">retryPolicy</span><span class="token punctuation">:</span> OnFailure
+  <span class="token key atrule">entrypoint</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test
+  <span class="token key atrule">serviceAccountName</span><span class="token punctuation">:</span> default
+  <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nfs<span class="token punctuation">-</span>datastore
+      <span class="token key atrule">nfs</span><span class="token punctuation">:</span>
+        <span class="token key atrule">server</span><span class="token punctuation">:</span> NFS_SERVER
+        <span class="token key atrule">path</span><span class="token punctuation">:</span> /data/workflow/log
+  <span class="token key atrule">onExit</span><span class="token punctuation">:</span> exit<span class="token punctuation">-</span>handler<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+]]></content>
+      <categories>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>kubectl</tag>
+        <tag>argo-workflow</tag>
+      </tags>
+  </entry>
+  <entry>
+    <title>VMware Tanzu kubernetes 发行版部署尝鲜</title>
+    <url>/2022-02-06-deploy-tanzu-k8s-cluster.html</url>
+    <content><![CDATA[<p>之前接触的 Kubernetes 集群部署工具大多数都是依赖于 ssh 连接到待部署的节点上进行部署操作，这样就要求部署前需要提前准备好集群节点，且要保证这些节点的网络互通以及时钟同步等问题。类似于 kubespray 或者 kubekey 这些部署工具是不会去管这些底层的 IaaS 资源的创建，是要自己提前准备好。但是在一些企业私有云环境中，使用了如 <a href="https://docs.vmware.com/cn/VMware-vSphere/index.html">VMware vShpere</a> 或 <a href="https://www.openstack.org/">OpenStack</a> 这些虚拟化平台，是可以将 K8s 集群部署与 IaaS 资源创建这两步统一起来的，这样就可以避免手动创建和配置虚拟机这些繁琐的步骤。</p>
+<p>目前将 IaaS 资源创建与 K8s 集群部署结合起来也有比较成熟的方案，比如基于 <a href="https://github.com/kubernetes-sigs/cluster-api">cluster-api</a> 项目的 <a href="https://github.com/vmware-tanzu">tanzu</a> 。本文就以 <a href="https://github.com/vmware-tanzu/community-edition">VMware Tanzu 社区版</a> 为例在一台物理服务器上，从安装 ESXi OS 到部署完成 Tanzu Workload 集群，来体验一下这种部署方案的与众不同之处。</p>
+<h2 id="部署流程"><a href="#部署流程" class="headerlink" title="部署流程"></a>部署流程</h2><ul>
+<li>下载依赖文件</li>
+<li>安装 govc 依赖</li>
+<li>安装 ESXi OS</li>
+<li>安装 vCenter</li>
+<li>配置 vCenter</li>
+<li>创建 bootstrap 虚拟机</li>
+<li>初始化 bootstrap 节点</li>
+<li>部署 Tanzu Manager 集群</li>
+<li>部署 Tanzu Workload 集群</li>
+</ul>
+<h3 id="劝退三连-😂"><a href="#劝退三连-😂" class="headerlink" title="劝退三连 😂"></a>劝退三连 😂</h3><ul>
+<li>需要有一个 <a href="https://customerconnect.vmware.com/login">VMware 的账户</a> 用于下载一些 ISO 镜像和虚拟机模版;</li>
+<li>需要有一台物理服务器，推荐最低配置 8C 32G，至少 256GB 存储；</li>
+<li>需要一台 DHCP 服务器，由于默认是使用 DHCP 获取 IP 来分配给虚拟机的，因此 ESXi 所在的 VM Network  网络中必须有一台 DHCP 服务器用于给虚拟机分配 IP；</li>
+</ul>
+<h3 id="下载依赖文件"><a href="#下载依赖文件" class="headerlink" title="下载依赖文件"></a>下载依赖文件</h3><p>整个部署流程所需要的依文件赖如下，可以先将这些依赖下载到本地的机器上，方便后续使用。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">root@devbox:/root/tanzu <span class="token comment"># tree -sh</span>
+<span class="token builtin class-name">.</span>
+├── <span class="token punctuation">[</span>  12M<span class="token punctuation">]</span>  govc_Linux_x86_64.tar.gz
+├── <span class="token punctuation">[</span> 895M<span class="token punctuation">]</span>  photon-3-kube-v1.21.2+vmware.1-tkg.2-12816990095845873721.ova
+├── <span class="token punctuation">[</span> 225M<span class="token punctuation">]</span>  photon-ova-4.0-c001795b80.ova
+├── <span class="token punctuation">[</span> 170M<span class="token punctuation">]</span>  tce-linux-amd64-v0.9.1.tar.gz
+├── <span class="token punctuation">[</span> <span class="token number">9</span>.0G<span class="token punctuation">]</span>  VMware-VCSA-all-7.0.3-18778458.iso
+└── <span class="token punctuation">[</span> 390M<span class="token punctuation">]</span>  VMware-VMvisor-Installer-7.0U2a-17867351.x86_64.iso<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<table>
+<thead>
+<tr>
+<th>文件</th>
+<th>用途</th>
+<th>下载方式</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><a href="https://customerconnect.vmware.com/downloads/details?downloadGroup=ESXI70U2A&productId=974&rPId=46384">VMware-VMvisor-Installer-7.0U2a-17867351.x86_64.iso</a></td>
+<td>安装 ESXi OS</td>
+<td>VMware 需账户</td>
+</tr>
+<tr>
+<td><a href="https://customerconnect.vmware.com/downloads/details?downloadGroup=VC70U3C&productId=974&rPId=83853">VMware-VCSA-all-7.0.3-19234570.iso</a></td>
+<td>安装 vCenter</td>
+<td>VMware 需账户</td>
+</tr>
+<tr>
+<td><a href="https://packages.vmware.com/photon/4.0/Rev2/ova/photon-ova-4.0-c001795b80.ova">photon-ova-4.0-c001795b80.ova</a></td>
+<td>bootstrap 节点</td>
+<td>VMware</td>
+</tr>
+<tr>
+<td><a href="https://customerconnect.vmware.com/downloads/get-download?downloadGroup=TCE-090">photon-3-kube-v1.21.2+vmware.1-tkg.2-12816990095845873721.ova</a></td>
+<td>tanzu 集群节点</td>
+<td>VMware 需账户</td>
+</tr>
+<tr>
+<td><a href="https://github.com/vmware-tanzu/community-edition/releases/download/v0.9.1/tce-linux-amd64-v0.9.1.tar.gz">tce-linux-amd64-v0.9.1.tar.gz</a></td>
+<td>tanzu 社区版</td>
+<td>GitHub release</td>
+</tr>
+<tr>
+<td><a href="https://github.com/vmware/govmomi/releases/download/v0.27.3/govc_Linux_x86_64.tar.gz">govc_Linux_x86_64.tar.gz</a></td>
+<td>安装&#x2F;配置 vCenter</td>
+<td>GitHub release</td>
+</tr>
+</tbody></table>
+<p>注意 ESXi 和 vCenter 的版本最好是 7.0 及以上，我只在 ESXi 7.0.2 和 vCenter 7.0.3 上测试过，其他版本可能会有些差异；另外 ESXi 的版本不建议使用最新的 7.0.3，因为有比较严重的 bug，官方也建议用户生产环境不要使用该版本了 <a href="https://kb.vmware.com/s/article/86287">vSphere 7.0 Update 3 Critical Known Issues - Workarounds &amp; Fix (86287)</a> 。</p>
+<h3 id="安装-govc-及依赖"><a href="#安装-govc-及依赖" class="headerlink" title="安装 govc 及依赖"></a>安装 govc 及依赖</h3><p>在本地机器上安装好 govc 和 jq，这两个工具后面在配置 vCenter 的时候会用到。</p>
+<ul>
+<li>macOS</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ brew <span class="token function">install</span> govc jq<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<ul>
+<li>Debian&#x2F;Ubuntu</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ <span class="token function">tar</span> -xf govc_Linux_x86_64.tar.gz -C /usr/local/bin
+$ <span class="token function">apt</span> <span class="token function">install</span> jq -y<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span></span></code></pre>
+
+<ul>
+<li>其他 Linux 可以在 govc 和 jq 的 GitHub 上下载对应的安装文件进行安装。</li>
+</ul>
+<h3 id="安装-ESXi-OS"><a href="#安装-ESXi-OS" class="headerlink" title="安装 ESXi OS"></a>安装 ESXi OS</h3><p>ESXi OS 的安装网上有很多教程，没有太多值得讲解的地方，因此就参照一下其他大佬写的博客或者官方的安装文档 <a href="https://docs.vmware.com/cn/VMware-vSphere/7.0/vsphere-esxi-701-installation-setup-guide.pdf">VMware ESXi 安装和设置</a> 来就行；需要注意一点，ESXi OS 安装时 VMFSL 分区将会占用大量的存储空间，这将会使得 ESXi OS 安装所在的磁盘最终创建出来的 datastore 比预期小很多，而且这个 VMFSL 分区在安装好之后就很难再做调整了。因此如果磁盘存储空间比较紧张，在安装 ESXi OS 之前可以考虑下如何去掉这个分区；或者和我一样将 ESXI OS 安装在了一个 16G 的 USB Dom 盘上，不过生产环境不建议采用这种方案 😂（其实个人觉着安装在 U 盘上问题不大，ESXi OS 启动之后是加载到内存中运行的，不会对 U 盘有大量的读写操作，只不过在机房中 U 盘被人不小心拔走就凉了。</p>
+<ul>
+<li>设置 govc 环境变量</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># ESXi 节点的 IP</span>
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">ESXI_IP</span><span class="token operator">=</span><span class="token string">"192.168.18.47"</span>
+<span class="token comment"># ESXi 登录的用户名，初次安装后默认为 root</span>
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">GOVC_USERNAME</span><span class="token operator">=</span><span class="token string">"root"</span>
+<span class="token comment"># 在 ESXi 安装时设置的 root 密码</span>
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">GOVC_PASSWORD</span><span class="token operator">=</span><span class="token string">"admin@2022"</span>
+<span class="token comment"># 允许不安全的 SSL 连接</span>
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">GOVC_INSECURE</span><span class="token operator">=</span>true
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">GOVC_URL</span><span class="token operator">=</span><span class="token string">"https://<span class="token variable">$&#123;ESXI_IP&#125;</span>"</span>
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">GOVC_DATASTORE</span><span class="token operator">=</span>datastore1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>测试 govc 是否能正常连接 ESXi 主机</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">Name:              localhost.local
+  Path:            /ha-datacenter/host/localhost/localhost
+  Manufacturer:    Dell
+  Logical CPUs:    <span class="token number">20</span> CPUs @ 2394MHz
+  Processor type:  Intel<span class="token punctuation">(</span>R<span class="token punctuation">)</span> Xeon<span class="token punctuation">(</span>R<span class="token punctuation">)</span> Silver 4210R CPU @ <span class="token number">2</span>.40GHz
+  CPU usage:       <span class="token number">579</span> MHz <span class="token punctuation">(</span><span class="token number">1.2</span>%<span class="token punctuation">)</span>
+  Memory:          261765MB
+  Memory usage:    <span class="token number">16457</span> MB <span class="token punctuation">(</span><span class="token number">6.3</span>%<span class="token punctuation">)</span>
+  Boot time:       <span class="token number">2022</span>-02-02 <span class="token number">11</span>:53:59.630124 +0000 UTC
+  State:           connected<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="安装-vCenter"><a href="#安装-vCenter" class="headerlink" title="安装 vCenter"></a>安装 vCenter</h3><p>按照 VMware 官方的 vCenter 安装文档 <a href="https://docs.vmware.com/cn/VMware-vSphere/7.0/com.vmware.vcenter.install.doc/GUID-8DC3866D-5087-40A2-8067-1361A2AF95BD.html">关于 vCenter Server 安装和设置</a> 来安装实在是过于繁琐，其实官方的 ISO 安装方式无非是运行一个 installer web 服务，然后在浏览器上配置好 vCenter 虚拟机的参数，再将填写的配置信息在部署 vcsa 虚拟机的时候注入到 ova 的配置参数中。</p>
+<p>知道这个安装过程的原理之后我们也可以自己配置 vCenter 的参数信息，然后通过 govc 来部署 ova；这比使用 UI 的方式简单方便很多，最终只需要填写一个配置文件，一条命令就可以部署完成啦。</p>
+<ul>
+<li>首先是挂载 vCenter 的 ISO，找到 vcsa ova 文件，它是 vCenter 虚拟机的模版</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ <span class="token function">mount</span> -o loop VMware-VCSA-all-7.0.3-18778458.iso /mnt
+$ <span class="token function">ls</span> /mnt/vcsa/VMware-vCenter-Server-Appliance-7.0.3.00100-18778458_OVF10.ova
+/mnt/vcsa/VMware-vCenter-Server-Appliance-7.0.3.00100-18778458_OVF10.ova<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>根据自己的环境信息修改下面安装脚本中的相关配置：</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token shebang important">#!/usr/bin/env bash</span>
+<span class="token assign-left variable">VCSA_OVA_FILE</span><span class="token operator">=</span><span class="token variable">$1</span>
+
+<span class="token builtin class-name">set</span> -o errexit
+<span class="token builtin class-name">set</span> -o nounset
+<span class="token builtin class-name">set</span> -o pipefail
+
+<span class="token comment"># ESXi 的 IP 地址</span>
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">ESXI_IP</span><span class="token operator">=</span><span class="token string">"192.168.18.47"</span>
+
+<span class="token comment"># ESXi 的用户名</span>
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">GOVC_USERNAME</span><span class="token operator">=</span><span class="token string">"root"</span>
+
+<span class="token comment"># ESXI 的密码</span>
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">GOVC_PASSWORD</span><span class="token operator">=</span><span class="token string">"admin@2020"</span>
+
+<span class="token comment"># 安装 vCenter 虚拟机使用的 datastore 名称</span>
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">GOVC_DATASTORE</span><span class="token operator">=</span>datastore1
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">GOVC_INSECURE</span><span class="token operator">=</span>true
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">GOVC_URL</span><span class="token operator">=</span><span class="token string">"https://<span class="token variable">$&#123;ESXI_IP&#125;</span>"</span>
+
+<span class="token comment"># vCenter 的登录密码</span>
+<span class="token assign-left variable">VM_PASSWORD</span><span class="token operator">=</span><span class="token string">"admin@2020"</span>
+<span class="token comment"># vCenter 的 IP 地址</span>
+<span class="token assign-left variable">VM_IP</span><span class="token operator">=</span><span class="token number">192.168</span>.20.92
+<span class="token comment"># vCenter 虚拟机的名称</span>
+<span class="token assign-left variable">VM_NAME</span><span class="token operator">=</span>vCenter-Server-Appliance
+<span class="token comment"># vCenter 虚拟机使用的网络</span>
+<span class="token assign-left variable">VM_NETWORK</span><span class="token operator">=</span><span class="token string">"VM Network"</span>
+<span class="token comment"># DNS 服务器</span>
+<span class="token assign-left variable">VM_DNS</span><span class="token operator">=</span><span class="token string">"223.6.6.6"</span>
+<span class="token comment"># NTP 服务器</span>
+<span class="token assign-left variable">VM_NTP</span><span class="token operator">=</span><span class="token string">"0.pool.ntp.org"</span>
+
+<span class="token function-name function">deploy_vcsa_vm</span><span class="token punctuation">(</span><span class="token punctuation">)</span><span class="token punctuation">&#123;</span>
+    <span class="token assign-left variable">config</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span>govc host.info -k -json <span class="token operator">|</span> jq -r <span class="token string">'.HostSystems[].Config'</span><span class="token variable">)</span></span>
+    <span class="token assign-left variable">gateway</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span>jq -r <span class="token string">'.Network.IpRouteConfig.DefaultGateway'</span> <span class="token operator">&lt;&lt;&lt;</span><span class="token string">"<span class="token variable">$config</span>"</span><span class="token variable">)</span></span>
+    <span class="token assign-left variable">route</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span>jq -r <span class="token string">'.Network.RouteTableInfo.IpRoute[] | select(.DeviceName == "vmk0") | select(.Gateway == "0.0.0.0")'</span> <span class="token operator">&lt;&lt;&lt;</span><span class="token string">"<span class="token variable">$config</span>"</span><span class="token variable">)</span></span>
+    <span class="token assign-left variable">prefix</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span>jq -r <span class="token string">'.PrefixLength'</span> <span class="token operator">&lt;&lt;&lt;</span><span class="token string">"<span class="token variable">$route</span>"</span><span class="token variable">)</span></span>
+    <span class="token assign-left variable">opts</span><span class="token operator">=</span><span class="token punctuation">(</span>
+        cis.vmdir.password<span class="token operator">=</span><span class="token variable">$&#123;VM_PASSWORD&#125;</span>
+        cis.appliance.root.passwd<span class="token operator">=</span><span class="token variable">$&#123;VM_PASSWORD&#125;</span>
+        cis.appliance.root.shell<span class="token operator">=</span>/bin/bash
+        cis.deployment.node.type<span class="token operator">=</span>embedded
+        cis.vmdir.domain-name<span class="token operator">=</span>vsphere.local
+        cis.vmdir.site-name<span class="token operator">=</span>VCSA
+        cis.appliance.net.addr.family<span class="token operator">=</span>ipv4
+        cis.appliance.ssh.enabled<span class="token operator">=</span>True
+        cis.ceip_enabled<span class="token operator">=</span>False
+        cis.deployment.autoconfig<span class="token operator">=</span>True
+        cis.appliance.net.addr<span class="token operator">=</span><span class="token variable">$&#123;VM_IP&#125;</span>
+        cis.appliance.net.prefix<span class="token operator">=</span><span class="token variable">$&#123;prefix&#125;</span>
+        cis.appliance.net.dns.servers<span class="token operator">=</span><span class="token variable">$&#123;VM_DNS&#125;</span>
+        cis.appliance.net.gateway<span class="token operator">=</span><span class="token variable">$gateway</span>
+        cis.appliance.ntp.servers<span class="token operator">=</span><span class="token string">"<span class="token variable">$&#123;VM_NTP&#125;</span>"</span>
+        cis.appliance.net.mode<span class="token operator">=</span>static
+    <span class="token punctuation">)</span>
+
+    <span class="token assign-left variable">props</span><span class="token operator">=</span><span class="token variable"><span class="token variable">$(</span><span class="token builtin class-name">printf</span> -- <span class="token string">"guestinfo.%s<span class="token entity" title="\n">\n</span>"</span> <span class="token string">"<span class="token variable">$&#123;opts<span class="token punctuation">[</span>@<span class="token punctuation">]</span>&#125;</span>"</span> <span class="token operator">|</span> jq --slurp -R 'split<span class="token punctuation">(</span><span class="token string">"<span class="token entity" title="\n">\n</span>"</span><span class="token punctuation">)</span> <span class="token operator">|</span> map<span class="token punctuation">(</span>select<span class="token punctuation">(</span>. <span class="token operator">!=</span> <span class="token string">""</span><span class="token punctuation">)</span><span class="token variable">)</span></span> <span class="token operator">|</span> map<span class="token punctuation">(</span>split<span class="token punctuation">(</span><span class="token string">"="</span><span class="token punctuation">))</span> <span class="token operator">|</span> map<span class="token punctuation">(</span><span class="token punctuation">&#123;</span><span class="token string">"Key"</span><span class="token builtin class-name">:</span> .<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>, <span class="token string">"Value"</span><span class="token builtin class-name">:</span> .<span class="token punctuation">[</span><span class="token number">1</span><span class="token punctuation">]</span><span class="token punctuation">&#125;</span><span class="token punctuation">)</span>'<span class="token punctuation">)</span>
+
+    <span class="token function">cat</span> <span class="token operator">&lt;&lt;</span><span class="token string">EOF<span class="token bash punctuation"> <span class="token operator">|</span> govc import.<span class="token variable">$&#123;VCSA_OVA_FILE<span class="token operator">##</span>*.&#125;</span> -options - <span class="token string">"<span class="token variable">$&#123;VCSA_OVA_FILE&#125;</span>"</span></span>
+    &#123;
+    "Name": "<span class="token variable">$&#123;VM_NAME&#125;</span>",
+    "Deployment": "tiny",
+    "DiskProvisioning": "thin",
+    "IPProtocol": "IPv4",
+    "Annotation": "VMware vCenter Server Appliance",
+    "PowerOn": false,
+    "WaitForIP": false,
+    "InjectOvfEnv": true,
+    "NetworkMapping": [
+        &#123;
+        "Name": "Network 1",
+        "Network": "<span class="token variable">$&#123;VM_NETWORK&#125;</span>"
+        &#125;
+    ],
+    "PropertyMapping": <span class="token variable">$&#123;props&#125;</span>
+    &#125;
+EOF</span>
+
+<span class="token punctuation">&#125;</span>
+
+deploy_vcsa_vm
+govc vm.change -vm <span class="token string">"<span class="token variable">$&#123;VM_NAME&#125;</span>"</span> -g vmwarePhoton64Guest
+govc vm.power -on <span class="token string">"<span class="token variable">$&#123;VM_NAME&#125;</span>"</span>
+govc vm.ip -a <span class="token string">"<span class="token variable">$&#123;VM_NAME&#125;</span>"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>通过脚本安装 vCenter，指定第一参数为 OVA 的绝对路径。运行完后将会自动将 ova 导入到 vCenter，并启动虚拟机；</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 执行该脚本，第一个参数传入 vCenter ISO 中 vcsa ova 文件的绝对路径</span>
+$ <span class="token function">bash</span> install-vcsa.sh /mnt/vcsa/VMware-vCenter-Server-Appliance-7.0.3.00100-18778458_OVF10.ova
+
+<span class="token punctuation">[</span>03-02-22 <span class="token number">18</span>:40:19<span class="token punctuation">]</span> Uploading VMware-vCenter-Server-Appliance-7.0.3.00100-18778458_OVF10-disk1.vmdk<span class="token punctuation">..</span>. OK
+<span class="token punctuation">[</span>03-02-22 <span class="token number">18</span>:41:09<span class="token punctuation">]</span> Uploading VMware-vCenter-Server-Appliance-7.0.3.00100-18778458_OVF10-disk2.vmdk<span class="token punctuation">..</span>. <span class="token punctuation">(</span><span class="token number">29</span>%, <span class="token number">52</span>.5MiB/s<span class="token punctuation">)</span>
+<span class="token punctuation">[</span>03-02-22 <span class="token number">18</span>:43:08<span class="token punctuation">]</span> Uploading VMware-vCenter-Server-Appliance-7.0.3.00100-18778458_OVF10-disk2.vmdk<span class="token punctuation">..</span>. OK
+<span class="token punctuation">[</span>03-02-22 <span class="token number">18</span>:43:08<span class="token punctuation">]</span> Injecting OVF environment<span class="token punctuation">..</span>.
+Powering on VirtualMachine:3<span class="token punctuation">..</span>. OK
+fe80::20c:29ff:fe03:2f80<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>设置 vCenter 登录的环境变量，我们使用 govc 来配置 vCenter，通过浏览器 Web UI 的方式配置起来效率有点低，不如 govc 命令一把梭方便 😂</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token builtin class-name">export</span> <span class="token assign-left variable">GOVC_URL</span><span class="token operator">=</span><span class="token string">"https://192.168.20.92"</span>
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">GOVC_USERNAME</span><span class="token operator">=</span><span class="token string">"administrator@vsphere.local"</span>
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">GOVC_PASSWORD</span><span class="token operator">=</span><span class="token string">"admin@2022"</span>
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">GOVC_INSECURE</span><span class="token operator">=</span>true
+<span class="token builtin class-name">export</span> <span class="token assign-left variable">GOVC_DATASTORE</span><span class="token operator">=</span>datastore1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>虚拟机启动后将自动进行 vCenter 的安装配置，等待一段时间 vCenter 安装好之后，使用 govc about 查看 vCenter 的信息，如果能正确或渠道说明 vCenter 就安装好了；</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ govc about
+FullName:     VMware vCenter Server <span class="token number">7.0</span>.3 build-18778458
+Name:         VMware vCenter Server
+Vendor:       VMware, Inc.
+Version:      <span class="token number">7.0</span>.3
+Build:        <span class="token number">18778458</span>
+OS type:      linux-x64
+API type:     VirtualCenter
+API version:  <span class="token number">7.0</span>.3.0
+Product ID:   vpx
+UUID:         0b49e119-e38f-4fbc-84a8-d7a0e548027d<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="配置-vCenter"><a href="#配置-vCenter" class="headerlink" title="配置 vCenter"></a>配置 vCenter</h3><p>这一步骤主要是配置 vCenter：创建 Datacenter、cluster、folder 等资源，并将 ESXi 主机添加到 cluster 中；</p>
+<ul>
+<li>配置 vCenter</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 创建 Datacenter 数据中心</span>
+$ govc datacenter.create SH-IDC
+<span class="token comment"># 创建 Cluster 集群</span>
+$ govc cluster.create -dc<span class="token operator">=</span>SH-IDC Tanzu-Cluster
+<span class="token comment"># 将 ESXi 主机添加到 Cluster 当中</span>
+$ govc cluster.add -dc<span class="token operator">=</span>SH-IDC -cluster<span class="token operator">=</span>Tanzu-Cluster -hostname<span class="token operator">=</span><span class="token number">192.168</span>.18.47 --username<span class="token operator">=</span>root -password<span class="token operator">=</span><span class="token string">'admin@2020'</span> -noverify
+<span class="token comment"># 创建 folder，用于将 Tanzu 的节点虚拟机存放到该文件夹下</span>
+$ govc folder.create /SH-IDC/vm/Tanzu-node
+<span class="token comment"># 导入 tanzu 汲取节点的虚拟机 ova 模版</span>
+$ govc import.ova -dc<span class="token operator">=</span><span class="token string">'SH-IDC'</span> -ds<span class="token operator">=</span><span class="token string">'datastore1'</span> photon-3-kube-v1.21.2+vmware.1-tkg.2-12816990095845873721.ova
+<span class="token comment"># 将虚拟机转换为模版，后续 tanzu 集群将以该模版创建虚拟机</span>
+$ govc vm.markastemplate photon-3-kube-v1.21.2<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="初始化-bootstrap-节点"><a href="#初始化-bootstrap-节点" class="headerlink" title="初始化 bootstrap 节点"></a>初始化 bootstrap 节点</h3><p>bootstrap 节点节点是用于运行 tanzu 部署工具的节点，官方是支持 Linux&#x2F;macOS&#x2F;Windows 三种操作系统的，但有一些比较严格的要求：</p>
+<table>
+<thead>
+<tr>
+<th>Arch: x86; ARM is currently unsupported</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>RAM: 6 GB</td>
+</tr>
+<tr>
+<td>CPU: 2</td>
+</tr>
+<tr>
+<td><a href="https://docs.docker.com/engine/install/">Docker</a> Add your non-root user account to the docker user group. Create the group if it does not already exist. This lets the Tanzu CLI access the Docker socket, which is owned by the root user. For more information, see steps 1 to 4 in the <a href="https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user">Manage Docker as a non-root user</a> procedure in the Docker documentation.</td>
+</tr>
+<tr>
+<td><a href="https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/">Kubectl</a></td>
+</tr>
+<tr>
+<td>Latest version of Chrome, Firefox, Safari, Internet Explorer, or Edge</td>
+</tr>
+<tr>
+<td>System time is synchronized with a Network Time Protocol (NTP) server.</td>
+</tr>
+<tr>
+<td>Ensure your bootstrap machine is using <a href="https://man7.org/linux/man-pages/man7/cgroups.7.html">cgroup v1</a>. For more information, see <a href="https://tanzucommunityedition.io/docs/latest/support-matrix/#check-and-set-the-cgroup">Check and set the cgroup</a>.</td>
+</tr>
+</tbody></table>
+<p>在这里为了避免这些麻烦的配置，我就直接使用的 VMware 官方的 <a href="https://github.com/vmware/photon/wiki/Downloading-Photon-OS#photon-os-40-rev2-binaries">Photon OS 4.0 Rev2</a> ，下载 OVA 格式的镜像直接导入到 ESXi 主机启动一台虚拟机即可，能节省不少麻烦的配置；还有一个好处就是在一台单独的虚拟机上运行 tanzu 部署工具不会污染本地的开发环境。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ <span class="token function">wget</span> https://packages.vmware.com/photon/4.0/Rev2/ova/photon-ova-4.0-c001795b80.ova
+<span class="token comment"># 导入 OVA 虚拟机模版</span>
+$ govc import.ova -ds<span class="token operator">=</span><span class="token string">'datastore1'</span> -name bootstrap-node photon-ova-4.0-c001795b80.ova
+<span class="token comment"># 修改一下虚拟机的配置，调整为 4C8G</span>
+$ govc vm.change -c <span class="token number">4</span> -m <span class="token number">8192</span> -vm bootstrap-node
+<span class="token comment"># 开启虚拟机</span>
+$ govc vm.power -on bootstrap-node
+<span class="token comment"># 查看虚拟机获取到的 IPv4 地址</span>
+$ govc vm.ip -a -wait 1m bootstrap-node
+$ <span class="token function">ssh</span> root@192.168.74.10
+<span class="token comment"># 密码默认为 changeme，输入完密码之后提示在输入一遍 changeme，然后再修改新的密码</span>
+root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># cat /etc/os-release</span>
+<span class="token assign-left variable">NAME</span><span class="token operator">=</span><span class="token string">"VMware Photon OS"</span>
+<span class="token assign-left variable">VERSION</span><span class="token operator">=</span><span class="token string">"4.0"</span>
+<span class="token assign-left variable">ID</span><span class="token operator">=</span>photon
+<span class="token assign-left variable">VERSION_ID</span><span class="token operator">=</span><span class="token number">4.0</span>
+<span class="token assign-left variable">PRETTY_NAME</span><span class="token operator">=</span><span class="token string">"VMware Photon OS/Linux"</span>
+<span class="token assign-left variable">ANSI_COLOR</span><span class="token operator">=</span><span class="token string">"1;34"</span>
+<span class="token assign-left variable">HOME_URL</span><span class="token operator">=</span><span class="token string">"https://vmware.github.io/photon/"</span>
+<span class="token assign-left variable">BUG_REPORT_URL</span><span class="token operator">=</span><span class="token string">"https://github.com/vmware/photon/issues"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>安装部署时需要的一些工具（切，Photon OS 里竟然连个 tar 命令都没有 😠</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># tdnf install sudo tar -y</span>
+root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># curl -LO https://dl.k8s.io/release/v1.21.2/bin/linux/amd64/kubectl</span>
+root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>启动 docker，bootstrap 节点会以 kind 的方式运行一个 K8s 集群，需要用到 docker。虽然可以使用外部的 k8s 集群，但不是很推荐，因为 cluster-api 依赖 k8s 的版本，不能太高也不能太低；</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># systemctl enable docker --now</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<ul>
+<li>从 <a href="https://github.com/vmware-tanzu/community-edition/releases/tag/v0.9.1">vmware-tanzu&#x2F;community-edition</a> 下载 tanzu 社区版的安装包，然后解压后安装；</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># curl -LO  https://github.com/vmware-tanzu/community-edition/releases/download/v0.9.1/tce-linux-amd64-v0.9.1.tar.gz</span>
+root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># tar -xf tce-linux-amd64-v0.9.1.tar.gz</span>
+root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># cd tce-linux-amd64-v0.9.1/</span>
+root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># bash install.sh</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>然而不幸地翻车了， install.sh 脚本中禁止 root 用户运行</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">+ <span class="token assign-left variable">ALLOW_INSTALL_AS_ROOT</span><span class="token operator">=</span>
++ <span class="token punctuation">[</span><span class="token punctuation">[</span> <span class="token number">0</span> -eq <span class="token number">0</span> <span class="token punctuation">]</span><span class="token punctuation">]</span>
++ <span class="token punctuation">[</span><span class="token punctuation">[</span> <span class="token string">''</span> <span class="token operator">!=</span> <span class="token punctuation">\</span>t<span class="token punctuation">\</span>r<span class="token punctuation">\</span>u<span class="token punctuation">\</span>e <span class="token punctuation">]</span><span class="token punctuation">]</span>
++ <span class="token builtin class-name">echo</span> <span class="token string">'Do not run this script as root'</span>
+Do not run this script as root
++ <span class="token builtin class-name">exit</span> <span class="token number">1</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>我就偏偏要以 root 用户来运行怎么惹 😡</p>
+<p><img src="https://p.k8s.li/2022-01-22-deploy-tanzu-k8s-cluster-01.jpg"></p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># sed 去掉第一个 exit 1 就可以了</span>
+root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># sed -i.bak "s/exit 1//" install.sh</span>
+root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># bash install.sh</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>安装好之后会输出 <code>Installation complete!</code>（讲真官方的 install.sh 脚本输出很不友好，污染我的 terminal</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">+ tanzu init
+<span class="token operator">|</span> initializing ✔  successfully initialized CLI
+++ tanzu plugin repo list
+++ <span class="token function">grep</span> tce
++ <span class="token assign-left variable">TCE_REPO</span><span class="token operator">=</span>
++ <span class="token punctuation">[</span><span class="token punctuation">[</span> -z <span class="token string">''</span> <span class="token punctuation">]</span><span class="token punctuation">]</span>
++ tanzu plugin repo <span class="token function">add</span> --name tce --gcp-bucket-name tce-tanzu-cli-plugins --gcp-root-path artifacts
+++ tanzu plugin repo list
+++ <span class="token function">grep</span> core-admin
++ <span class="token assign-left variable">TCE_REPO</span><span class="token operator">=</span>
++ <span class="token punctuation">[</span><span class="token punctuation">[</span> -z <span class="token string">''</span> <span class="token punctuation">]</span><span class="token punctuation">]</span>
++ tanzu plugin repo <span class="token function">add</span> --name core-admin --gcp-bucket-name tce-tanzu-cli-framework-admin --gcp-root-path artifacts-admin
++ <span class="token builtin class-name">echo</span> <span class="token string">'Installation complete!'</span>
+Installation complete<span class="token operator">!</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="部署管理集群"><a href="#部署管理集群" class="headerlink" title="部署管理集群"></a>部署管理集群</h3><p>先是部署一个 tanzu 的管理集群，有两种方式，一种是通过 <a href="https://tanzucommunityedition.io/docs/latest/getting-started/">官方文档</a> 提到的通过 Web UI 的方式。目前这个 UI 界面比较拉垮，它主要是用来让用户填写一些配置参数，然后调用后台的 tanzu 命令来部署集群。并把集群部署的日志和进度展示出来；部署完成之后，这个 UI 又不能管理这些集群，又不支持部署 workload 集群（</p>
+<p>另一种就是通过 tanzu 命令指定配置文件来部署，这种方式不需要通过浏览器在 web 页面上傻乎乎地点来点去填一些参数，只需要提前填写好一个 yaml 格式的配置文件即可。下面我们就采用 tanzu 命令来部署集群，管理集群的配置文件模版如下：</p>
+<ul>
+<li>tanzu-mgt-cluster.yaml</li>
+</ul>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token comment"># Cluster Pod IP 的 CIDR</span>
+<span class="token key atrule">CLUSTER_CIDR</span><span class="token punctuation">:</span> 100.96.0.0/11
+<span class="token comment"># Service 的 CIDR</span>
+<span class="token key atrule">SERVICE_CIDR</span><span class="token punctuation">:</span> 100.64.0.0/13
+<span class="token comment"># 集群的名称</span>
+<span class="token key atrule">CLUSTER_NAME</span><span class="token punctuation">:</span> tanzu<span class="token punctuation">-</span>control<span class="token punctuation">-</span>plan
+<span class="token comment"># 集群的类型</span>
+<span class="token key atrule">CLUSTER_PLAN</span><span class="token punctuation">:</span> dev
+<span class="token comment"># 集群节点的 arch</span>
+<span class="token key atrule">OS_ARCH</span><span class="token punctuation">:</span> amd64
+<span class="token comment"># 集群节点的 OS 名称</span>
+<span class="token key atrule">OS_NAME</span><span class="token punctuation">:</span> photon
+<span class="token comment"># 集群节点 OS 版本</span>
+<span class="token key atrule">OS_VERSION</span><span class="token punctuation">:</span> <span class="token string">"3"</span>
+<span class="token comment"># 基础设施资源的提供方</span>
+<span class="token key atrule">INFRASTRUCTURE_PROVIDER</span><span class="token punctuation">:</span> vsphere
+
+<span class="token comment"># 集群的 VIP</span>
+<span class="token key atrule">VSPHERE_CONTROL_PLANE_ENDPOINT</span><span class="token punctuation">:</span> 192.168.75.194
+<span class="token comment"># control-plan 节点的磁盘大小</span>
+<span class="token key atrule">VSPHERE_CONTROL_PLANE_DISK_GIB</span><span class="token punctuation">:</span> <span class="token string">"20"</span>
+<span class="token comment"># control-plan 节点的内存大小</span>
+<span class="token key atrule">VSPHERE_CONTROL_PLANE_MEM_MIB</span><span class="token punctuation">:</span> <span class="token string">"8192"</span>
+<span class="token comment"># control-plan 节点的 CPU 核心数量</span>
+<span class="token key atrule">VSPHERE_CONTROL_PLANE_NUM_CPUS</span><span class="token punctuation">:</span> <span class="token string">"4"</span>
+<span class="token comment"># work 节点的磁盘大小</span>
+<span class="token key atrule">VSPHERE_WORKER_DISK_GIB</span><span class="token punctuation">:</span> <span class="token string">"20"</span>
+<span class="token comment"># work 节点的内存大小</span>
+<span class="token key atrule">VSPHERE_WORKER_MEM_MIB</span><span class="token punctuation">:</span> <span class="token string">"4096"</span>
+<span class="token comment"># work 节点的 CPU 核心数量</span>
+<span class="token key atrule">VSPHERE_WORKER_NUM_CPUS</span><span class="token punctuation">:</span> <span class="token string">"2"</span>
+
+<span class="token comment"># vCenter 的 Datacenter 路径</span>
+<span class="token key atrule">VSPHERE_DATACENTER</span><span class="token punctuation">:</span> /SH<span class="token punctuation">-</span>IDC
+<span class="token comment"># 虚拟机创建的 Datastore 路径</span>
+<span class="token key atrule">VSPHERE_DATASTORE</span><span class="token punctuation">:</span> /SH<span class="token punctuation">-</span>IDC/datastore/datastore1
+<span class="token comment"># 虚拟机创建的文件夹</span>
+<span class="token key atrule">VSPHERE_FOLDER</span><span class="token punctuation">:</span> /SH<span class="token punctuation">-</span>IDC/vm/Tanzu<span class="token punctuation">-</span>node
+<span class="token comment"># 虚拟机使用的网络</span>
+<span class="token key atrule">VSPHERE_NETWORK</span><span class="token punctuation">:</span> /SH<span class="token punctuation">-</span>IDC/network/VM Network
+<span class="token comment"># 虚拟机关联的资源池</span>
+<span class="token key atrule">VSPHERE_RESOURCE_POOL</span><span class="token punctuation">:</span> /SH<span class="token punctuation">-</span>IDC/host/Tanzu<span class="token punctuation">-</span>Cluster/Resources
+
+<span class="token comment"># vCenter 的 IP</span>
+<span class="token key atrule">VSPHERE_SERVER</span><span class="token punctuation">:</span> 192.168.75.110
+<span class="token comment"># vCenter 的用户名</span>
+<span class="token key atrule">VSPHERE_USERNAME</span><span class="token punctuation">:</span> administrator@vsphere.local
+<span class="token comment"># vCenter 的密码，以 base64 编码</span>
+<span class="token key atrule">VSPHERE_PASSWORD</span><span class="token punctuation">:</span> &lt;encoded<span class="token punctuation">:</span>base64password<span class="token punctuation">></span>
+<span class="token comment"># vCenter 的证书指纹，可以通过 govc about.cert -json | jq -r '.ThumbprintSHA1' 获取</span>
+<span class="token key atrule">VSPHERE_TLS_THUMBPRINT</span><span class="token punctuation">:</span> EB<span class="token punctuation">:</span>F3<span class="token punctuation">:</span>D8<span class="token punctuation">:</span>7A<span class="token punctuation">:</span>E8<span class="token punctuation">:</span>3D<span class="token punctuation">:</span>1A<span class="token punctuation">:</span>59<span class="token punctuation">:</span>B0<span class="token punctuation">:</span>DE<span class="token punctuation">:</span>73<span class="token punctuation">:</span>96<span class="token punctuation">:</span>DC<span class="token punctuation">:</span>B9<span class="token punctuation">:</span>5F<span class="token punctuation">:</span>13<span class="token punctuation">:</span>86<span class="token punctuation">:</span>EF<span class="token punctuation">:</span>B6<span class="token punctuation">:</span><span class="token number">27</span>
+<span class="token comment"># 虚拟机注入的 ssh 公钥，需要用它来 ssh 登录集群节点</span>
+<span class="token key atrule">VSPHERE_SSH_AUTHORIZED_KEY</span><span class="token punctuation">:</span> ssh<span class="token punctuation">-</span>rsa
+
+<span class="token comment"># 一些默认参数</span>
+<span class="token key atrule">AVI_ENABLE</span><span class="token punctuation">:</span> <span class="token string">"false"</span>
+<span class="token key atrule">IDENTITY_MANAGEMENT_TYPE</span><span class="token punctuation">:</span> none
+<span class="token key atrule">ENABLE_AUDIT_LOGGING</span><span class="token punctuation">:</span> <span class="token string">"false"</span>
+<span class="token key atrule">ENABLE_CEIP_PARTICIPATION</span><span class="token punctuation">:</span> <span class="token string">"false"</span>
+<span class="token key atrule">TKG_HTTP_PROXY_ENABLED</span><span class="token punctuation">:</span> <span class="token string">"false"</span>
+<span class="token key atrule">DEPLOY_TKG_ON_VSPHERE7</span><span class="token punctuation">:</span> <span class="token string">"true"</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>通过 tanzu CLI 部署管理集群</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ tanzu management-cluster create --file tanzu-mgt-cluster.yaml -v6
+
+<span class="token comment"># 如果没有配置 VSPHERE_TLS_THUMBPRINT 会有一个确认 vSphere thumbprint 的交互，输入 Y 就可以</span>
+Validating the pre-requisites<span class="token punctuation">..</span>.
+Do you want to <span class="token builtin class-name">continue</span> with the vSphere thumbprint EB:F3:D8:7A:E8:3D:1A:59:B0:DE:73:96:DC:B9:5F:13:86:EF:B6:27 <span class="token punctuation">[</span>y/N<span class="token punctuation">]</span>: y<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="部署日志"><a href="#部署日志" class="headerlink" title="部署日志"></a>部署日志</h3><pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># tanzu management-cluster create --file tanzu-mgt-cluster.yaml -v 6</span>
+compatibility <span class="token function">file</span> <span class="token punctuation">(</span>/root/.config/tanzu/tkg/compatibility/tkg-compatibility.yaml<span class="token punctuation">)</span> already exists, skipping download
+BOM files inside /root/.config/tanzu/tkg/bom already exists, skipping download
+CEIP Opt-in status: <span class="token boolean">false</span>
+
+Validating the pre-requisites<span class="token punctuation">..</span>.
+
+vSphere <span class="token number">7.0</span> Environment Detected.
+
+You have connected to a vSphere <span class="token number">7.0</span> environment <span class="token function">which</span> does not have vSphere with Tanzu enabled. vSphere with Tanzu includes
+an integrated Tanzu Kubernetes Grid Service <span class="token function">which</span> turns a vSphere cluster into a platform <span class="token keyword">for</span> running Kubernetes workloads <span class="token keyword">in</span> dedicated
+resource pools. Configuring Tanzu Kubernetes Grid Service is <span class="token keyword">done</span> through vSphere HTML5 client.
+
+Tanzu Kubernetes Grid Service is the preferred way to consume Tanzu Kubernetes Grid <span class="token keyword">in</span> vSphere <span class="token number">7.0</span> environments. Alternatively you may
+deploy a non-integrated Tanzu Kubernetes Grid instance on vSphere <span class="token number">7.0</span>.
+Deploying TKG management cluster on vSphere <span class="token number">7.0</span> <span class="token punctuation">..</span>.
+Identity Provider not configured. Some authentication features won<span class="token string">'t work.
+Checking if VSPHERE_CONTROL_PLANE_ENDPOINT 192.168.20.94 is already in use
+
+Setting up management cluster...
+Validating configuration...
+Using infrastructure provider vsphere:v0.7.10
+Generating cluster configuration...
+Setting up bootstrapper...
+Fetching configuration for kind node image...
+kindConfig:
+ &amp;&#123;&#123;Cluster kind.x-k8s.io/v1alpha4&#125;  [&#123;  map[] [&#123;/var/run/docker.sock /var/run/docker.sock false false &#125;] [] [] []&#125;] &#123; 0  100.96.0.0/11 100.64.0.0/13 false &#125; map[] map[] [apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+imageRepository: projects.registry.vmware.com/tkg
+etcd:
+  local:
+    imageRepository: projects.registry.vmware.com/tkg
+    imageTag: v3.4.13_vmware.15
+dns:
+  type: CoreDNS
+  imageRepository: projects.registry.vmware.com/tkg
+  imageTag: v1.8.0_vmware.5] [] [] []&#125;
+Creating kind cluster: tkg-kind-c7vj6kds0a6sf43e6210
+Creating cluster "tkg-kind-c7vj6kds0a6sf43e6210" ...
+Ensuring node image (projects.registry.vmware.com/tkg/kind/node:v1.21.2_vmware.1) ...
+Pulling image: projects.registry.vmware.com/tkg/kind/node:v1.21.2_vmware.1 ...
+Preparing nodes ...
+Writing configuration ...
+Starting control-plane ...
+Installing CNI ...
+Installing StorageClass ...
+Waiting 2m0s for control-plane = Ready ...
+Ready after 19s
+Bootstrapper created. Kubeconfig: /root/.kube-tkg/tmp/config_3fkzTCOL
+Installing providers on bootstrapper...
+Fetching providers
+Installing cert-manager Version="v1.1.0"
+Waiting for cert-manager to be available...
+Installing Provider="cluster-api" Version="v0.3.23" TargetNamespace="capi-system"
+Installing Provider="bootstrap-kubeadm" Version="v0.3.23" TargetNamespace="capi-kubeadm-bootstrap-system"
+Installing Provider="control-plane-kubeadm" Version="v0.3.23" TargetNamespace="capi-kubeadm-control-plane-system"
+Installing Provider="infrastructure-vsphere" Version="v0.7.10" TargetNamespace="capv-system"
+installed  Component=="cluster-api"  Type=="CoreProvider"  Version=="v0.3.23"
+installed  Component=="kubeadm"  Type=="BootstrapProvider"  Version=="v0.3.23"
+installed  Component=="kubeadm"  Type=="ControlPlaneProvider"  Version=="v0.3.23"
+installed  Component=="vsphere"  Type=="InfrastructureProvider"  Version=="v0.7.10"
+Waiting for provider infrastructure-vsphere
+Waiting for provider control-plane-kubeadm
+Waiting for provider cluster-api
+Waiting for provider bootstrap-kubeadm
+Waiting for resource capi-kubeadm-control-plane-controller-manager of type *v1.Deployment to be up and running
+pods are not yet running for deployment '</span>capi-kubeadm-control-plane-controller-manager<span class="token string">' in namespace '</span>capi-kubeadm-control-plane-system<span class="token string">', retrying
+Passed waiting on provider bootstrap-kubeadm after 25.205820854s
+pods are not yet running for deployment '</span>capi-controller-manager<span class="token string">' in namespace '</span>capi-webhook-system<span class="token string">', retrying
+Passed waiting on provider infrastructure-vsphere after 30.185406332s
+Passed waiting on provider cluster-api after 30.213216243s
+Success waiting on all providers.
+
+Start creating management cluster...
+patch cluster object with operation status:
+	&#123;
+		"metadata": &#123;
+			"annotations": &#123;
+				"TKGOperationInfo" : "&#123;\"Operation\":\"Create\",\"OperationStartTimestamp\":\"2022-02-06 02:35:34.30219421 +0000 UTC\",\"OperationTimeout\":1800&#125;",
+				"TKGOperationLastObservedTimestamp" : "2022-02-06 02:35:34.30219421 +0000 UTC"
+			&#125;
+		&#125;
+	&#125;
+cluster control plane is still being initialized, retrying
+Getting secret for cluster
+Waiting for resource tanzu-control-plan-kubeconfig of type *v1.Secret to be up and running
+Saving management cluster kubeconfig into /root/.kube/config
+Installing providers on management cluster...
+Fetching providers
+Installing cert-manager Version="v1.1.0"
+Waiting for cert-manager to be available...
+Installing Provider="cluster-api" Version="v0.3.23" TargetNamespace="capi-system"
+Installing Provider="bootstrap-kubeadm" Version="v0.3.23" TargetNamespace="capi-kubeadm-bootstrap-system"
+Installing Provider="control-plane-kubeadm" Version="v0.3.23" TargetNamespace="capi-kubeadm-control-plane-system"
+Installing Provider="infrastructure-vsphere" Version="v0.7.10" TargetNamespace="capv-system"
+installed  Component=="cluster-api"  Type=="CoreProvider"  Version=="v0.3.23"
+installed  Component=="kubeadm"  Type=="BootstrapProvider"  Version=="v0.3.23"
+installed  Component=="kubeadm"  Type=="ControlPlaneProvider"  Version=="v0.3.23"
+installed  Component=="vsphere"  Type=="InfrastructureProvider"  Version=="v0.7.10"
+Waiting for provider control-plane-kubeadm
+Waiting for provider bootstrap-kubeadm
+Waiting for provider infrastructure-vsphere
+Waiting for provider cluster-api
+Waiting for resource capi-kubeadm-control-plane-controller-manager of type *v1.Deployment to be up and running
+Passed waiting on provider control-plane-kubeadm after 10.046865402s
+Waiting for resource antrea-controller of type *v1.Deployment to be up and running
+Moving all Cluster API objects from bootstrap cluster to management cluster...
+Performing move...
+Discovering Cluster API objects
+Moving Cluster API objects Clusters=1
+Creating objects in the target cluster
+Deleting objects from the source cluster
+Waiting for additional components to be up and running...
+Waiting for packages to be up and running...
+Waiting for package: antrea
+Waiting for package: metrics-server
+Waiting for package: tanzu-addons-manager
+Waiting for package: vsphere-cpi
+Waiting for package: vsphere-csi
+Waiting for resource antrea of type *v1alpha1.PackageInstall to be up and running
+Waiting for resource vsphere-cpi of type *v1alpha1.PackageInstall to be up and running
+Waiting for resource vsphere-csi of type *v1alpha1.PackageInstall to be up and running
+Waiting for resource metrics-server of type *v1alpha1.PackageInstall to be up and running
+Waiting for resource tanzu-addons-manager of type *v1alpha1.PackageInstall to be up and running
+Successfully reconciled package: antrea
+Successfully reconciled package: vsphere-csi
+Successfully reconciled package: metrics-server
+Context set for management cluster tanzu-control-plan as '</span>tanzu-control-plan-admin@tanzu-control-plan'.
+Deleting kind cluster: tkg-kind-c7vj6kds0a6sf43e6210
+
+Management cluster created<span class="token operator">!</span>
+
+
+You can now create your first workload cluster by running the following:
+
+  tanzu cluster create <span class="token punctuation">[</span>name<span class="token punctuation">]</span> -f <span class="token punctuation">[</span>file<span class="token punctuation">]</span>
+
+
+Some addons might be getting installed<span class="token operator">!</span> Check their status by running the following:
+
+  kubectl get apps -A<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>部署完成之后，将管理集群的 kubeconfig 文件复制到 kubectl 默认的目录下</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># cp $&#123;HOME&#125;/.kube-tkg/config $&#123;HOME&#125;/.kube/config</span><span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<ul>
+<li>查看集群状态信息</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token comment"># 管理集群的 cluster 资源信息，管理集群的 CR 默认保存在了 tkg-system namespace 下</span>
+root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># kubectl get cluster -A</span>
+NAMESPACE    NAME                 PHASE
+tkg-system   tanzu-control-plan   Provisioned
+<span class="token comment"># 管理集群的 machine 资源信息</span>
+root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># kubectl get machine -A</span>
+NAMESPACE    NAME                                       PROVIDERID                                       PHASE         VERSION
+tkg-system   tanzu-control-plan-control-plane-gs4bl     vsphere://4239c450-f621-d78e-3c44-4ac8890c0cd3   Running       v1.21.2+vmware.1
+tkg-system   tanzu-control-plan-md-0-7cdc97c7c6-kxcnx   vsphere://4239d776-c04c-aacc-db12-3380542a6d03   Provisioned   v1.21.2+vmware.1
+<span class="token comment"># 运行的组件状态</span>
+root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># kubectl get pod -A</span>
+NAMESPACE                           NAME                                                             READY   STATUS    RESTARTS   AGE
+capi-kubeadm-bootstrap-system       capi-kubeadm-bootstrap-controller-manager-6494884869-wlzhx       <span class="token number">2</span>/2     Running   <span class="token number">0</span>          8m37s
+capi-kubeadm-control-plane-system   capi-kubeadm-control-plane-controller-manager-857d687b9d-tpznv   <span class="token number">2</span>/2     Running   <span class="token number">0</span>          8m35s
+capi-system                         capi-controller-manager-778bd4dfb9-tkvwg                         <span class="token number">2</span>/2     Running   <span class="token number">0</span>          8m41s
+capi-webhook-system                 capi-controller-manager-9995bdc94-svjm2                          <span class="token number">2</span>/2     Running   <span class="token number">0</span>          8m41s
+capi-webhook-system                 capi-kubeadm-bootstrap-controller-manager-68845b65f8-sllgv       <span class="token number">2</span>/2     Running   <span class="token number">0</span>          8m38s
+capi-webhook-system                 capi-kubeadm-control-plane-controller-manager-9847c6747-vvz6g    <span class="token number">2</span>/2     Running   <span class="token number">0</span>          8m35s
+capi-webhook-system                 capv-controller-manager-55bf67fbd5-4t46v                         <span class="token number">2</span>/2     Running   <span class="token number">0</span>          8m31s
+capv-system                         capv-controller-manager-587fbf697f-bbzs9                         <span class="token number">2</span>/2     Running   <span class="token number">0</span>          8m31s
+cert-manager                        cert-manager-77f6fb8fd5-8tq6n                                    <span class="token number">1</span>/1     Running   <span class="token number">0</span>          11m
+cert-manager                        cert-manager-cainjector-6bd4cff7bb-6vlzx                         <span class="token number">1</span>/1     Running   <span class="token number">0</span>          11m
+cert-manager                        cert-manager-webhook-fbfcb9d6c-qpkbc                             <span class="token number">1</span>/1     Running   <span class="token number">0</span>          11m
+kube-system                         antrea-agent-5m9d4                                               <span class="token number">2</span>/2     Running   <span class="token number">0</span>          6m
+kube-system                         antrea-agent-8mpr7                                               <span class="token number">2</span>/2     Running   <span class="token number">0</span>          5m40s
+kube-system                         antrea-controller-5bbcb98667-hklss                               <span class="token number">1</span>/1     Running   <span class="token number">0</span>          5m50s
+kube-system                         coredns-8dcb5c56b-ckvb7                                          <span class="token number">1</span>/1     Running   <span class="token number">0</span>          12m
+kube-system                         coredns-8dcb5c56b-d98hf                                          <span class="token number">1</span>/1     Running   <span class="token number">0</span>          12m
+kube-system                         etcd-tanzu-control-plan-control-plane-gs4bl                      <span class="token number">1</span>/1     Running   <span class="token number">0</span>          12m
+kube-system                         kube-apiserver-tanzu-control-plan-control-plane-gs4bl            <span class="token number">1</span>/1     Running   <span class="token number">0</span>          12m
+kube-system                         kube-controller-manager-tanzu-control-plan-control-plane-gs4bl   <span class="token number">1</span>/1     Running   <span class="token number">0</span>          12m
+kube-system                         kube-proxy-d4wq4                                                 <span class="token number">1</span>/1     Running   <span class="token number">0</span>          12m
+kube-system                         kube-proxy-nhkgg                                                 <span class="token number">1</span>/1     Running   <span class="token number">0</span>          11m
+kube-system                         kube-scheduler-tanzu-control-plan-control-plane-gs4bl            <span class="token number">1</span>/1     Running   <span class="token number">0</span>          12m
+kube-system                         kube-vip-tanzu-control-plan-control-plane-gs4bl                  <span class="token number">1</span>/1     Running   <span class="token number">0</span>          12m
+kube-system                         metrics-server-59fcb9fcf-xjznj                                   <span class="token number">1</span>/1     Running   <span class="token number">0</span>          6m29s
+kube-system                         vsphere-cloud-controller-manager-kzffm                           <span class="token number">1</span>/1     Running   <span class="token number">0</span>          5m50s
+kube-system                         vsphere-csi-controller-74675c9488-q9h5c                          <span class="token number">6</span>/6     Running   <span class="token number">0</span>          6m31s
+kube-system                         vsphere-csi-node-dmvvr                                           <span class="token number">3</span>/3     Running   <span class="token number">0</span>          6m31s
+kube-system                         vsphere-csi-node-k6x98                                           <span class="token number">3</span>/3     Running   <span class="token number">0</span>          6m31s
+tkg-system                          kapp-controller-6499b8866-xnql7                                  <span class="token number">1</span>/1     Running   <span class="token number">0</span>          10m
+tkg-system                          tanzu-addons-controller-manager-657c587556-rpbjm                 <span class="token number">1</span>/1     Running   <span class="token number">0</span>          7m58s
+tkg-system                          tanzu-capabilities-controller-manager-6ff97656b8-cq7m7           <span class="token number">1</span>/1     Running   <span class="token number">0</span>          11m
+tkr-system                          tkr-controller-manager-6bc455b5d4-wm98s                          <span class="token number">1</span>/1     Running   <span class="token number">0</span>          10m<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="部署流程-1"><a href="#部署流程-1" class="headerlink" title="部署流程"></a>部署流程</h3><p>结合 <a href="https://github.com/vmware-tanzu/tanzu-framework/blob/main/pkg/v1/tkg/client/init.go">tanzu 的源码</a> 和部署输出的日志我们大体可以得知，tanzu 管理集群部署大致分为如下几步：</p>
+<pre class="line-numbers language-go" data-language="go"><code class="language-go"><span class="token comment">// https://github.com/vmware-tanzu/tanzu-framework/blob/main/pkg/v1/tkg/client/init.go</span>
+
+<span class="token comment">// management cluster init step constants</span>
+<span class="token keyword">const</span> <span class="token punctuation">(</span>
+	StepConfigPrerequisite                 <span class="token operator">=</span> <span class="token string">"Configure prerequisite"</span>
+	StepValidateConfiguration              <span class="token operator">=</span> <span class="token string">"Validate configuration"</span>
+	StepGenerateClusterConfiguration       <span class="token operator">=</span> <span class="token string">"Generate cluster configuration"</span>
+	StepSetupBootstrapCluster              <span class="token operator">=</span> <span class="token string">"Setup bootstrap cluster"</span>
+	StepInstallProvidersOnBootstrapCluster <span class="token operator">=</span> <span class="token string">"Install providers on bootstrap cluster"</span>
+	StepCreateManagementCluster            <span class="token operator">=</span> <span class="token string">"Create management cluster"</span>
+	StepInstallProvidersOnRegionalCluster  <span class="token operator">=</span> <span class="token string">"Install providers on management cluster"</span>
+	StepMoveClusterAPIObjects              <span class="token operator">=</span> <span class="token string">"Move cluster-api objects from bootstrap cluster to management cluster"</span>
+<span class="token punctuation">)</span>
+
+<span class="token comment">// InitRegionSteps management cluster init step sequence</span>
+<span class="token keyword">var</span> InitRegionSteps <span class="token operator">=</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token builtin">string</span><span class="token punctuation">&#123;</span>
+	StepConfigPrerequisite<span class="token punctuation">,</span>
+	StepValidateConfiguration<span class="token punctuation">,</span>
+	StepGenerateClusterConfiguration<span class="token punctuation">,</span>
+	StepSetupBootstrapCluster<span class="token punctuation">,</span>
+	StepInstallProvidersOnBootstrapCluster<span class="token punctuation">,</span>
+	StepCreateManagementCluster<span class="token punctuation">,</span>
+	StepInstallProvidersOnRegionalCluster<span class="token punctuation">,</span>
+	StepMoveClusterAPIObjects<span class="token punctuation">,</span>
+<span class="token punctuation">&#125;</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>ConfigPrerequisite 准备阶段，会下载 <code>tkg-compatibility</code> 和 <code>tkg-bom</code> 镜像，用于检查环境的兼容性；</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">Downloading TKG compatibility <span class="token function">file</span> from <span class="token string">'projects.registry.vmware.com/tkg/framework-zshippable/tkg-compatibility'</span>
+Downloading the TKG Bill of Materials <span class="token punctuation">(</span>BOM<span class="token punctuation">)</span> <span class="token function">file</span> from <span class="token string">'projects.registry.vmware.com/tkg/tkg-bom:v1.4.0'</span>
+Downloading the TKr Bill of Materials <span class="token punctuation">(</span>BOM<span class="token punctuation">)</span> <span class="token function">file</span> from <span class="token string">'projects.registry.vmware.com/tkg/tkr-bom:v1.21.2_vmware.1-tkg.1'</span>
+ERROR <span class="token number">2022</span>/02/06 02:24:46 svType <span class="token operator">!=</span> tvType<span class="token punctuation">;</span> <span class="token assign-left variable">key</span><span class="token operator">=</span>release, <span class="token assign-left variable">st</span><span class="token operator">=</span>map<span class="token punctuation">[</span>string<span class="token punctuation">]</span>interface <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>, <span class="token assign-left variable">tt</span><span class="token operator">=</span><span class="token operator">&lt;</span>nil<span class="token operator">></span>, <span class="token assign-left variable">sv</span><span class="token operator">=</span>map<span class="token punctuation">[</span>version:<span class="token punctuation">]</span>, <span class="token assign-left variable">tv</span><span class="token operator">=</span><span class="token operator">&lt;</span>nil<span class="token operator">></span>
+CEIP Opt-in status: <span class="token boolean">false</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>ValidateConfiguration 配置文件校验，根据填写的参数校验配置是否正确，以及检查 vCenter 当中有无匹配的虚拟机模版；</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">Validating the pre-requisites<span class="token punctuation">..</span>.
+
+vSphere <span class="token number">7.0</span> Environment Detected.
+
+You have connected to a vSphere <span class="token number">7.0</span> environment <span class="token function">which</span> does not have vSphere with Tanzu enabled. vSphere with Tanzu includes
+an integrated Tanzu Kubernetes Grid Service <span class="token function">which</span> turns a vSphere cluster into a platform <span class="token keyword">for</span> running Kubernetes workloads <span class="token keyword">in</span> dedicated
+resource pools. Configuring Tanzu Kubernetes Grid Service is <span class="token keyword">done</span> through vSphere HTML5 client.
+
+Tanzu Kubernetes Grid Service is the preferred way to consume Tanzu Kubernetes Grid <span class="token keyword">in</span> vSphere <span class="token number">7.0</span> environments. Alternatively you may
+deploy a non-integrated Tanzu Kubernetes Grid instance on vSphere <span class="token number">7.0</span>.
+Deploying TKG management cluster on vSphere <span class="token number">7.0</span> <span class="token punctuation">..</span>.
+Identity Provider not configured. Some authentication features won't work.
+Checking <span class="token keyword">if</span> VSPHERE_CONTROL_PLANE_ENDPOINT <span class="token number">192.168</span>.20.94 is already <span class="token keyword">in</span> use
+
+Setting up management cluster<span class="token punctuation">..</span>.
+Validating configuration<span class="token punctuation">..</span>.
+Using infrastructure provider vsphere:v0.7.10<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>GenerateClusterConfiguration 生成集群配置文件信息；</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">Generating cluster configuration<span class="token punctuation">..</span>.<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<ul>
+<li>SetupBootstrapCluster 设置 bootstrap 集群，目前默认为 kind。会运行一个 docker 容器，里面套娃运行着一个 k8s 集群；这个 bootstrap k8s 集群只是临时运行 cluster-api 来部署管理集群用的，部署完成之后 bootstrap 集群也就没用了，会自动删掉；</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">Setting up bootstrapper<span class="token punctuation">..</span>.
+Fetching configuration <span class="token keyword">for</span> kind <span class="token function">node</span> image<span class="token punctuation">..</span>.
+kindConfig:
+ <span class="token operator">&amp;</span><span class="token punctuation">&#123;</span><span class="token punctuation">&#123;</span>Cluster kind.x-k8s.io/v1alpha4<span class="token punctuation">&#125;</span>  <span class="token punctuation">[</span><span class="token punctuation">&#123;</span>  map<span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token punctuation">&#123;</span>/var/run/docker.sock /var/run/docker.sock <span class="token boolean">false</span> <span class="token boolean">false</span> <span class="token punctuation">&#125;</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">&#125;</span><span class="token punctuation">]</span> <span class="token punctuation">&#123;</span> <span class="token number">0</span>  <span class="token number">100.96</span>.0.0/11 <span class="token number">100.64</span>.0.0/13 <span class="token boolean">false</span> <span class="token punctuation">&#125;</span> map<span class="token punctuation">[</span><span class="token punctuation">]</span> map<span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token punctuation">[</span>apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+imageRepository: projects.registry.vmware.com/tkg
+etcd:
+  local:
+    imageRepository: projects.registry.vmware.com/tkg
+    imageTag: v3.4.13_vmware.15
+dns:
+  type: CoreDNS
+  imageRepository: projects.registry.vmware.com/tkg
+  imageTag: v1.8.0_vmware.5<span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token punctuation">]</span> <span class="token punctuation">[</span><span class="token punctuation">]</span><span class="token punctuation">&#125;</span>
+Creating kind cluster: tkg-kind-c7vj6kds0a6sf43e6210
+Creating cluster <span class="token string">"tkg-kind-c7vj6kds0a6sf43e6210"</span> <span class="token punctuation">..</span>.
+Ensuring <span class="token function">node</span> image <span class="token punctuation">(</span>projects.registry.vmware.com/tkg/kind/node:v1.21.2_vmware.1<span class="token punctuation">)</span> <span class="token punctuation">..</span>.
+Pulling image: projects.registry.vmware.com/tkg/kind/node:v1.21.2_vmware.1 <span class="token punctuation">..</span>.
+Preparing nodes <span class="token punctuation">..</span>.
+Writing configuration <span class="token punctuation">..</span>.
+Starting control-plane <span class="token punctuation">..</span>.
+Installing CNI <span class="token punctuation">..</span>.
+Installing StorageClass <span class="token punctuation">..</span>.
+Waiting 2m0s <span class="token keyword">for</span> control-plane <span class="token operator">=</span> Ready <span class="token punctuation">..</span>.
+Ready after 19s
+Bootstrapper created. Kubeconfig: /root/.kube-tkg/tmp/config_3fkzTCOL<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>InstallProvidersOnBootstrapCluster 在 bootstrap 集群上安装 cluste-api 相关组件；</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">Installing providers on bootstrapper<span class="token punctuation">..</span>.
+Fetching providers
+<span class="token comment"># 安装 cert-manager 主要是为了生成 k8s 集群部署所依赖的那一堆证书</span>
+Installing cert-manager <span class="token assign-left variable">Version</span><span class="token operator">=</span><span class="token string">"v1.1.0"</span>
+Waiting <span class="token keyword">for</span> cert-manager to be available<span class="token punctuation">..</span>.
+Installing <span class="token assign-left variable">Provider</span><span class="token operator">=</span><span class="token string">"cluster-api"</span> <span class="token assign-left variable">Version</span><span class="token operator">=</span><span class="token string">"v0.3.23"</span> <span class="token assign-left variable">TargetNamespace</span><span class="token operator">=</span><span class="token string">"capi-system"</span>
+Installing <span class="token assign-left variable">Provider</span><span class="token operator">=</span><span class="token string">"bootstrap-kubeadm"</span> <span class="token assign-left variable">Version</span><span class="token operator">=</span><span class="token string">"v0.3.23"</span> <span class="token assign-left variable">TargetNamespace</span><span class="token operator">=</span><span class="token string">"capi-kubeadm-bootstrap-system"</span>
+Installing <span class="token assign-left variable">Provider</span><span class="token operator">=</span><span class="token string">"control-plane-kubeadm"</span> <span class="token assign-left variable">Version</span><span class="token operator">=</span><span class="token string">"v0.3.23"</span> <span class="token assign-left variable">TargetNamespace</span><span class="token operator">=</span><span class="token string">"capi-kubeadm-control-plane-system"</span>
+Installing <span class="token assign-left variable">Provider</span><span class="token operator">=</span><span class="token string">"infrastructure-vsphere"</span> <span class="token assign-left variable">Version</span><span class="token operator">=</span><span class="token string">"v0.7.10"</span> <span class="token assign-left variable">TargetNamespace</span><span class="token operator">=</span><span class="token string">"capv-system"</span>
+installed  <span class="token assign-left variable">Component</span><span class="token operator">==</span><span class="token string">"cluster-api"</span>  <span class="token assign-left variable">Type</span><span class="token operator">==</span><span class="token string">"CoreProvider"</span>  <span class="token assign-left variable">Version</span><span class="token operator">==</span><span class="token string">"v0.3.23"</span>
+installed  <span class="token assign-left variable">Component</span><span class="token operator">==</span><span class="token string">"kubeadm"</span>  <span class="token assign-left variable">Type</span><span class="token operator">==</span><span class="token string">"BootstrapProvider"</span>  <span class="token assign-left variable">Version</span><span class="token operator">==</span><span class="token string">"v0.3.23"</span>
+installed  <span class="token assign-left variable">Component</span><span class="token operator">==</span><span class="token string">"kubeadm"</span>  <span class="token assign-left variable">Type</span><span class="token operator">==</span><span class="token string">"ControlPlaneProvider"</span>  <span class="token assign-left variable">Version</span><span class="token operator">==</span><span class="token string">"v0.3.23"</span>
+installed  <span class="token assign-left variable">Component</span><span class="token operator">==</span><span class="token string">"vsphere"</span>  <span class="token assign-left variable">Type</span><span class="token operator">==</span><span class="token string">"InfrastructureProvider"</span>  <span class="token assign-left variable">Version</span><span class="token operator">==</span><span class="token string">"v0.7.10"</span>
+Waiting <span class="token keyword">for</span> provider infrastructure-vsphere
+Waiting <span class="token keyword">for</span> provider control-plane-kubeadm
+Waiting <span class="token keyword">for</span> provider cluster-api
+Waiting <span class="token keyword">for</span> provider bootstrap-kubeadm
+Passed waiting on provider infrastructure-vsphere after <span class="token number">30</span>.185406332s
+Passed waiting on provider cluster-api after <span class="token number">30</span>.213216243s
+Success waiting on all providers.<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>CreateManagementCluster 创建管理集群，这一步主要是创建虚拟机、初始化节点、运行 kubeadm 部署 k8s 集群；</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">Start creating management cluster<span class="token punctuation">..</span>.
+patch cluster object with operation status:
+	<span class="token punctuation">&#123;</span>
+		<span class="token string">"metadata"</span><span class="token builtin class-name">:</span> <span class="token punctuation">&#123;</span>
+			<span class="token string">"annotations"</span><span class="token builtin class-name">:</span> <span class="token punctuation">&#123;</span>
+				<span class="token string">"TKGOperationInfo"</span> <span class="token builtin class-name">:</span> <span class="token string">"&#123;<span class="token entity" title="\&quot;">\"</span>Operation<span class="token entity" title="\&quot;">\"</span>:<span class="token entity" title="\&quot;">\"</span>Create<span class="token entity" title="\&quot;">\"</span>,<span class="token entity" title="\&quot;">\"</span>OperationStartTimestamp<span class="token entity" title="\&quot;">\"</span>:<span class="token entity" title="\&quot;">\"</span>2022-02-06 02:35:34.30219421 +0000 UTC<span class="token entity" title="\&quot;">\"</span>,<span class="token entity" title="\&quot;">\"</span>OperationTimeout<span class="token entity" title="\&quot;">\"</span>:1800&#125;"</span>,
+				<span class="token string">"TKGOperationLastObservedTimestamp"</span> <span class="token builtin class-name">:</span> <span class="token string">"2022-02-06 02:35:34.30219421 +0000 UTC"</span>
+			<span class="token punctuation">&#125;</span>
+		<span class="token punctuation">&#125;</span>
+	<span class="token punctuation">&#125;</span>
+cluster control plane is still being initialized, retrying
+Getting secret <span class="token keyword">for</span> cluster
+Waiting <span class="token keyword">for</span> resource tanzu-control-plan-kubeconfig of <span class="token builtin class-name">type</span> *v1.Secret to be up and running
+Saving management cluster kubeconfig into /root/.kube/config<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>InstallProvidersOnRegionalCluster 在管理集群上安装 cluster-api 相关组件；</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">Installing providers on management cluster<span class="token punctuation">..</span>.
+Fetching providers
+Installing cert-manager <span class="token assign-left variable">Version</span><span class="token operator">=</span><span class="token string">"v1.1.0"</span>
+Waiting <span class="token keyword">for</span> cert-manager to be available<span class="token punctuation">..</span>.
+Installing <span class="token assign-left variable">Provider</span><span class="token operator">=</span><span class="token string">"cluster-api"</span> <span class="token assign-left variable">Version</span><span class="token operator">=</span><span class="token string">"v0.3.23"</span> <span class="token assign-left variable">TargetNamespace</span><span class="token operator">=</span><span class="token string">"capi-system"</span>
+Installing <span class="token assign-left variable">Provider</span><span class="token operator">=</span><span class="token string">"bootstrap-kubeadm"</span> <span class="token assign-left variable">Version</span><span class="token operator">=</span><span class="token string">"v0.3.23"</span> <span class="token assign-left variable">TargetNamespace</span><span class="token operator">=</span><span class="token string">"capi-kubeadm-bootstrap-system"</span>
+Installing <span class="token assign-left variable">Provider</span><span class="token operator">=</span><span class="token string">"control-plane-kubeadm"</span> <span class="token assign-left variable">Version</span><span class="token operator">=</span><span class="token string">"v0.3.23"</span> <span class="token assign-left variable">TargetNamespace</span><span class="token operator">=</span><span class="token string">"capi-kubeadm-control-plane-system"</span>
+Installing <span class="token assign-left variable">Provider</span><span class="token operator">=</span><span class="token string">"infrastructure-vsphere"</span> <span class="token assign-left variable">Version</span><span class="token operator">=</span><span class="token string">"v0.7.10"</span> <span class="token assign-left variable">TargetNamespace</span><span class="token operator">=</span><span class="token string">"capv-system"</span>
+installed  <span class="token assign-left variable">Component</span><span class="token operator">==</span><span class="token string">"cluster-api"</span>  <span class="token assign-left variable">Type</span><span class="token operator">==</span><span class="token string">"CoreProvider"</span>  <span class="token assign-left variable">Version</span><span class="token operator">==</span><span class="token string">"v0.3.23"</span>
+installed  <span class="token assign-left variable">Component</span><span class="token operator">==</span><span class="token string">"kubeadm"</span>  <span class="token assign-left variable">Type</span><span class="token operator">==</span><span class="token string">"BootstrapProvider"</span>  <span class="token assign-left variable">Version</span><span class="token operator">==</span><span class="token string">"v0.3.23"</span>
+installed  <span class="token assign-left variable">Component</span><span class="token operator">==</span><span class="token string">"kubeadm"</span>  <span class="token assign-left variable">Type</span><span class="token operator">==</span><span class="token string">"ControlPlaneProvider"</span>  <span class="token assign-left variable">Version</span><span class="token operator">==</span><span class="token string">"v0.3.23"</span>
+installed  <span class="token assign-left variable">Component</span><span class="token operator">==</span><span class="token string">"vsphere"</span>  <span class="token assign-left variable">Type</span><span class="token operator">==</span><span class="token string">"InfrastructureProvider"</span>  <span class="token assign-left variable">Version</span><span class="token operator">==</span><span class="token string">"v0.7.10"</span>
+Waiting <span class="token keyword">for</span> provider control-plane-kubeadm
+Waiting <span class="token keyword">for</span> provider bootstrap-kubeadm
+Waiting <span class="token keyword">for</span> provider infrastructure-vsphere
+Waiting <span class="token keyword">for</span> provider cluster-api
+Waiting <span class="token keyword">for</span> resource capv-controller-manager of <span class="token builtin class-name">type</span> *v1.Deployment to be up and running
+Passed waiting on provider infrastructure-vsphere after <span class="token number">20</span>.091935635s
+Passed waiting on provider cluster-api after <span class="token number">20</span>.109419304s
+Success waiting on all providers.
+Waiting <span class="token keyword">for</span> the management cluster to get ready <span class="token keyword">for</span> move<span class="token punctuation">..</span>.
+Waiting <span class="token keyword">for</span> resource tanzu-control-plan of <span class="token builtin class-name">type</span> *v1alpha3.Cluster to be up and running
+Waiting <span class="token keyword">for</span> resources <span class="token builtin class-name">type</span> *v1alpha3.MachineDeploymentList to be up and running
+Waiting <span class="token keyword">for</span> resources <span class="token builtin class-name">type</span> *v1alpha3.MachineList to be up and running
+Waiting <span class="token keyword">for</span> addons installation<span class="token punctuation">..</span>.
+Waiting <span class="token keyword">for</span> resources <span class="token builtin class-name">type</span> *v1alpha3.ClusterResourceSetList to be up and running
+Waiting <span class="token keyword">for</span> resource antrea-controller of <span class="token builtin class-name">type</span> *v1.Deployment to be up and running<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>MoveClusterAPIObjects 将 bootstrap 集群上 cluster-api 相关的资源转移到管理集群上。这一步的目的是为了达到 self-hosted 自托管的功能：即管理集群自身的扩缩容也是通过 cluster-api 来完成，这样就不用再依赖先前的那个 bootstrap 集群了；</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">Moving all Cluster API objects from bootstrap cluster to management cluster<span class="token punctuation">..</span>.
+Performing move<span class="token punctuation">..</span>.
+Discovering Cluster API objects
+Moving Cluster API objects <span class="token assign-left variable">Clusters</span><span class="token operator">=</span><span class="token number">1</span>
+Creating objects <span class="token keyword">in</span> the target cluster
+Deleting objects from the <span class="token builtin class-name">source</span> cluster
+Context <span class="token builtin class-name">set</span> <span class="token keyword">for</span> management cluster tanzu-control-plan as <span class="token string">'tanzu-control-plan-admin@tanzu-control-plan'</span><span class="token builtin class-name">.</span>
+Deleting kind cluster: tkg-kind-c7vj6kds0a6sf43e6210
+
+Management cluster created<span class="token operator">!</span>
+
+You can now create your first workload cluster by running the following:
+
+  tanzu cluster create <span class="token punctuation">[</span>name<span class="token punctuation">]</span> -f <span class="token punctuation">[</span>file<span class="token punctuation">]</span>
+
+
+Some addons might be getting installed<span class="token operator">!</span> Check their status by running the following:
+
+  kubectl get apps -A<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>部署完成后会删除 bootstrap 集群，因为 bootstrap 集群中的资源已经转移到了管理集群中，它继续存在的意义不大。</p>
+<h2 id="部署-workload-集群"><a href="#部署-workload-集群" class="headerlink" title="部署 workload 集群"></a>部署 workload 集群</h2><p>上面我们只是部署好了一个 tanzu 管理集群，我们真正的工作负载并不适合运行在这个集群上，因此我们还需要再部署一个 workload 集群，类似于 k8s 集群中的 worker 节点。部署 workload 集群的时候不再依赖 bootstrap 集群，而是使用管理集群。</p>
+<p>根据官方文档 <a href="https://tanzucommunityedition.io/docs/latest/vsphere-wl-template/">vSphere Workload Cluster Template</a> 中给出的模版创建一个配置文件，然后再通过 tanzu 命令来部署即可。配置文件内容如下：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token comment"># Cluster Pod IP 的 CIDR</span>
+<span class="token key atrule">CLUSTER_CIDR</span><span class="token punctuation">:</span> 100.96.0.0/11
+<span class="token comment"># Service 的 CIDR</span>
+<span class="token key atrule">SERVICE_CIDR</span><span class="token punctuation">:</span> 100.64.0.0/13
+<span class="token comment"># 集群的名称</span>
+<span class="token key atrule">CLUSTER_NAME</span><span class="token punctuation">:</span> tanzu<span class="token punctuation">-</span>workload<span class="token punctuation">-</span>cluster
+<span class="token comment"># 集群的类型</span>
+<span class="token key atrule">CLUSTER_PLAN</span><span class="token punctuation">:</span> dev
+<span class="token comment"># 集群节点的 arch</span>
+<span class="token key atrule">OS_ARCH</span><span class="token punctuation">:</span> amd64
+<span class="token comment"># 集群节点的 OS 名称</span>
+<span class="token key atrule">OS_NAME</span><span class="token punctuation">:</span> photon
+<span class="token comment"># 集群节点 OS 版本</span>
+<span class="token key atrule">OS_VERSION</span><span class="token punctuation">:</span> <span class="token string">"3"</span>
+<span class="token comment"># 基础设施资源的提供方</span>
+<span class="token key atrule">INFRASTRUCTURE_PROVIDER</span><span class="token punctuation">:</span> vsphere
+<span class="token comment"># cluster, machine 等自定义资源创建的 namespace</span>
+<span class="token key atrule">NAMESPACE</span><span class="token punctuation">:</span> default
+<span class="token comment"># CNI 选用类型，目前应该只支持 VMware 自家的 antrea</span>
+<span class="token key atrule">CNI</span><span class="token punctuation">:</span> antrea
+
+<span class="token comment"># 集群的 VIP</span>
+<span class="token key atrule">VSPHERE_CONTROL_PLANE_ENDPOINT</span><span class="token punctuation">:</span> 192.168.20.95
+<span class="token comment"># control-plan 节点的磁盘大小</span>
+<span class="token key atrule">VSPHERE_CONTROL_PLANE_DISK_GIB</span><span class="token punctuation">:</span> <span class="token string">"20"</span>
+<span class="token comment"># control-plan 节点的内存大小</span>
+<span class="token key atrule">VSPHERE_CONTROL_PLANE_MEM_MIB</span><span class="token punctuation">:</span> <span class="token string">"8192"</span>
+<span class="token comment"># control-plan 节点的 CPU 核心数量</span>
+<span class="token key atrule">VSPHERE_CONTROL_PLANE_NUM_CPUS</span><span class="token punctuation">:</span> <span class="token string">"4"</span>
+<span class="token comment"># work 节点的磁盘大小</span>
+<span class="token key atrule">VSPHERE_WORKER_DISK_GIB</span><span class="token punctuation">:</span> <span class="token string">"20"</span>
+<span class="token comment"># work 节点的内存大小</span>
+<span class="token key atrule">VSPHERE_WORKER_MEM_MIB</span><span class="token punctuation">:</span> <span class="token string">"4096"</span>
+<span class="token comment"># work 节点的 CPU 核心数量</span>
+<span class="token key atrule">VSPHERE_WORKER_NUM_CPUS</span><span class="token punctuation">:</span> <span class="token string">"2"</span>
+
+<span class="token comment"># vCenter 的 Datacenter 路径</span>
+<span class="token key atrule">VSPHERE_DATACENTER</span><span class="token punctuation">:</span> /SH<span class="token punctuation">-</span>IDC
+<span class="token comment"># 虚拟机创建的 Datastore 路径</span>
+<span class="token key atrule">VSPHERE_DATASTORE</span><span class="token punctuation">:</span> /SH<span class="token punctuation">-</span>IDC/datastore/datastore1
+<span class="token comment"># 虚拟机创建的文件夹</span>
+<span class="token key atrule">VSPHERE_FOLDER</span><span class="token punctuation">:</span> /SH<span class="token punctuation">-</span>IDC/vm/Tanzu<span class="token punctuation">-</span>node
+<span class="token comment"># 虚拟机使用的网络</span>
+<span class="token key atrule">VSPHERE_NETWORK</span><span class="token punctuation">:</span> /SH<span class="token punctuation">-</span>IDC/network/VM Network
+<span class="token comment"># 虚拟机关联的资源池</span>
+<span class="token key atrule">VSPHERE_RESOURCE_POOL</span><span class="token punctuation">:</span> /SH<span class="token punctuation">-</span>IDC/host/Tanzu<span class="token punctuation">-</span>Cluster/Resources
+
+<span class="token comment"># vCenter 的 IP</span>
+<span class="token key atrule">VSPHERE_SERVER</span><span class="token punctuation">:</span> 192.168.20.92
+<span class="token comment"># vCenter 的用户名</span>
+<span class="token key atrule">VSPHERE_USERNAME</span><span class="token punctuation">:</span> administrator@vsphere.local
+<span class="token comment"># vCenter 的密码，以 base64 编码</span>
+<span class="token key atrule">VSPHERE_PASSWORD</span><span class="token punctuation">:</span> &lt;encoded<span class="token punctuation">:</span>YWRtaW5AMjAyMA==<span class="token punctuation">></span>
+<span class="token comment"># vCenter 的证书指纹，可以通过 govc about.cert -json | jq -r '.ThumbprintSHA1' 获取</span>
+<span class="token key atrule">VSPHERE_TLS_THUMBPRINT</span><span class="token punctuation">:</span> CB<span class="token punctuation">:</span>23<span class="token punctuation">:</span>48<span class="token punctuation">:</span>E8<span class="token punctuation">:</span>93<span class="token punctuation">:</span>34<span class="token punctuation">:</span>AD<span class="token punctuation">:</span>27<span class="token punctuation">:</span>D8<span class="token punctuation">:</span>FD<span class="token punctuation">:</span>88<span class="token punctuation">:</span>1C<span class="token punctuation">:</span>D7<span class="token punctuation">:</span>08<span class="token punctuation">:</span>4B<span class="token punctuation">:</span>47<span class="token punctuation">:</span>9B<span class="token punctuation">:</span>12<span class="token punctuation">:</span>F4<span class="token punctuation">:</span>E0
+<span class="token comment"># 虚拟机注入的 ssh 公钥，需要用它来 ssh 登录集群节点</span>
+<span class="token key atrule">VSPHERE_SSH_AUTHORIZED_KEY</span><span class="token punctuation">:</span> ssh<span class="token punctuation">-</span>rsa
+
+<span class="token comment"># 一些默认参数</span>
+<span class="token key atrule">AVI_ENABLE</span><span class="token punctuation">:</span> <span class="token string">"false"</span>
+<span class="token key atrule">IDENTITY_MANAGEMENT_TYPE</span><span class="token punctuation">:</span> none
+<span class="token key atrule">ENABLE_AUDIT_LOGGING</span><span class="token punctuation">:</span> <span class="token string">"false"</span>
+<span class="token key atrule">ENABLE_CEIP_PARTICIPATION</span><span class="token punctuation">:</span> <span class="token string">"false"</span>
+<span class="token key atrule">TKG_HTTP_PROXY_ENABLED</span><span class="token punctuation">:</span> <span class="token string">"false"</span>
+<span class="token key atrule">DEPLOY_TKG_ON_VSPHERE7</span><span class="token punctuation">:</span> <span class="token string">"true"</span>
+<span class="token comment"># 是否开启虚拟机健康检查</span>
+<span class="token key atrule">ENABLE_MHC</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+<span class="token key atrule">MHC_UNKNOWN_STATUS_TIMEOUT</span><span class="token punctuation">:</span> 5m
+<span class="token key atrule">MHC_FALSE_STATUS_TIMEOUT</span><span class="token punctuation">:</span> 12m
+<span class="token comment"># 是否部署 vsphere cis 组件</span>
+<span class="token key atrule">ENABLE_DEFAULT_STORAGE_CLASS</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+<span class="token comment"># 是否开启集群自动扩缩容</span>
+<span class="token key atrule">ENABLE_AUTOSCALER</span><span class="token punctuation">:</span> <span class="token boolean important">false</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>通过 tanzu 命令来部署 workload 集群</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># tanzu cluster create tanzu-workload-cluster --file tanzu-workload-cluster.yaml</span>
+Validating configuration<span class="token punctuation">..</span>.
+Warning: Pinniped configuration not found. Skipping pinniped configuration <span class="token keyword">in</span> workload cluster. Please refer to the documentation to check <span class="token keyword">if</span> you can configure pinniped on workload cluster manually
+Creating workload cluster <span class="token string">'tanzu-workload-cluster'</span><span class="token punctuation">..</span>.
+Waiting <span class="token keyword">for</span> cluster to be initialized<span class="token punctuation">..</span>.
+Waiting <span class="token keyword">for</span> cluster nodes to be available<span class="token punctuation">..</span>.
+Waiting <span class="token keyword">for</span> cluster autoscaler to be available<span class="token punctuation">..</span>.
+Unable to <span class="token function">wait</span> <span class="token keyword">for</span> autoscaler deployment to be ready. reason: deployments.apps <span class="token string">"tanzu-workload-cluster-cluster-autoscaler"</span> not found
+Waiting <span class="token keyword">for</span> addons installation<span class="token punctuation">..</span>.
+Waiting <span class="token keyword">for</span> packages to be up and running<span class="token punctuation">..</span>.
+Workload cluster <span class="token string">'tanzu-workload-cluster'</span> created<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<ul>
+<li>部署完成之后查看一下集群的 CR 信息</li>
+</ul>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># kubectl get cluster</span>
+NAME                     PHASE
+tanzu-workload-cluster   Provisioned
+<span class="token comment"># machine 状态处于 Running 说明节点已经正常运行了</span>
+root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># kubectl get machine</span>
+NAME                                          PROVIDERID                                       PHASE     VERSION
+tanzu-workload-cluster-control-plane-4tdwq    vsphere://423950ac-1c6d-e5ef-3132-77b6a53cf626   Running   v1.21.2+vmware.1
+tanzu-workload-cluster-md-0-8555bbbfc-74vdg   vsphere://4239b83b-6003-d990-4555-a72ac4dec484   Running   v1.21.2+vmware.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="扩容集群"><a href="#扩容集群" class="headerlink" title="扩容集群"></a>扩容集群</h2><p>集群部署好之后，如果想对集群节点进行扩缩容，我们可以像 deployment 的一样，只需要修改一些 CR 的信息即可。cluster-api 相关组件会 watch 到这些 CR 的变化，并根据它的 spec 信息进行一系列调谐操作。如果当前集群节点数量低于所定义的节点副本数量，则会自动调用对应的 Provider 创建虚拟机，并对虚拟机进行初始化操作，将它转换为 k8s 里的一个 node 资源；</p>
+<h3 id="扩容-control-plan-节点"><a href="#扩容-control-plan-节点" class="headerlink" title="扩容 control-plan 节点"></a>扩容 control-plan 节点</h3><p>即扩容 master 节点，通过修改 <code>KubeadmControlPlane</code> 这个 CR 中的 <code>replicas</code> 副本数即可：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># kubectl scale kcp tanzu-workload-cluster-control-plane --replicas=3</span>
+<span class="token comment"># 可以看到 machine 已经处于 Provisioning 状态，说明集群节点对应的虚拟机正在创建中</span>
+root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># kubectl get machine</span>
+NAME                                          PROVIDERID                                       PHASE          VERSION
+tanzu-workload-cluster-control-plane-4tdwq    vsphere://423950ac-1c6d-e5ef-3132-77b6a53cf626   Running        v1.21.2+vmware.1
+tanzu-workload-cluster-control-plane-mkmd2                                                     Provisioning   v1.21.2+vmware.1
+tanzu-workload-cluster-md-0-8555bbbfc-74vdg   vsphere://4239b83b-6003-d990-4555-a72ac4dec484   Running        v1.21.2+vmware.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="扩容-work-节点"><a href="#扩容-work-节点" class="headerlink" title="扩容 work 节点"></a>扩容 work 节点</h3><p>扩容 worker 节点，通过修改 <code>MachineDeployment</code> 这个 CR 中的 <code>replicas</code> 副本数即可：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># kubectl scale md tanzu-workload-cluster-md-0 --replicas=3</span>
+root@photon-machine <span class="token punctuation">[</span> ~ <span class="token punctuation">]</span><span class="token comment"># kubectl get machine</span>
+NAME                                          PROVIDERID                                       PHASE     VERSION
+tanzu-workload-cluster-control-plane-4tdwq    vsphere://423950ac-1c6d-e5ef-3132-77b6a53cf626   Running   v1.21.2+vmware.1
+tanzu-workload-cluster-control-plane-mkmd2    vsphere://4239278c-0503-f03a-08b8-df92286bcdd7   Running   v1.21.2+vmware.1
+tanzu-workload-cluster-control-plane-rt5mb    vsphere://4239c882-2fe5-a394-60c0-616941a6363e   Running   v1.21.2+vmware.1
+tanzu-workload-cluster-md-0-8555bbbfc-4hlqk   vsphere://42395deb-e706-8b4b-a44f-c755c222575c   Running   v1.21.2+vmware.1
+tanzu-workload-cluster-md-0-8555bbbfc-74vdg   vsphere://4239b83b-6003-d990-4555-a72ac4dec484   Running   v1.21.2+vmware.1
+tanzu-workload-cluster-md-0-8555bbbfc-ftmlp   vsphere://42399640-8e94-85e5-c4bd-8436d84966e0   Running   v1.21.2+vmware.1<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h2 id="后续"><a href="#后续" class="headerlink" title="后续"></a>后续</h2><p>本文只是介绍了 tanzu 集群部署的大体流程，里面包含了 cluster-api 相关的概念在本文并没有做深入的分析，因为实在是太复杂了 😂，到现在我还是没太理解其中的一些原理，因此后续我再单独写一篇博客来讲解一些 cluster-api 相关的内容，到那时候在结合本文来看就容易理解很多。</p>
+<h2 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h2><ul>
+<li><a href="https://github.com/vmware-tanzu/community-edition">community-edition</a></li>
+<li><a href="https://github.com/vmware/photon">vmware&#x2F;photon</a></li>
+<li><a href="https://github.com/vmware-tanzu/tanzu-framework/blob/main/pkg/v1/tkg/client/init.go">tanzu-framework</a></li>
+<li><a href="https://github.com/kubernetes-sigs/cluster-api-provider-vsphere">cluster-api-provider-vsphere</a></li>
+<li><a href="https://tanzucommunityedition.io/docs/latest/workload-clusters/">Deploying a workload cluster</a></li>
+<li><a href="https://tanzucommunityedition.io/docs/latest/verify-deployment/">Examine the Management Cluster Deployment</a></li>
+<li><a href="https://tanzucommunityedition.io/docs/latest/vsphere/">Prepare to Deploy a Management or Standalone Clusters to vSphere</a></li>
+</ul>
+]]></content>
+      <categories>
+        <category>技术</category>
+      </categories>
+      <tags>
+        <tag>ESXi</tag>
+        <tag>Tanzu</tag>
+        <tag>Kubernetes</tag>
+        <tag>Cluster-api</tag>
+      </tags>
+  </entry>
+</search>

@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<meta name="theme-color" content="rgba(0,0,0,0)"><meta name="generator" content="Hexo 6.2.0">
+
+<link rel="preconnect" href="//fonts.loli.net" crossorigin>
+<link rel="preconnect" href="null//null" crossorigin>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32.ico">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16.ico">
+  <link rel="mask-icon" href="/images/logo.svg" color="rgba(0,0,0,0)">
+  <link rel="manifest" href="/manifest.json">
+
+<link rel="stylesheet" href="/css/main.css">
+
+<link rel="stylesheet" href="//fonts.loli.net/css?family=Lato:300,300italic,400,400italic,700,700italic&display=swap&subset=latin,latin-ext">
+
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css" integrity="sha256-DfWjNxDkM94fVBWx1H5BMMp0Zq7luBlV8QRcSES7s+0=" crossorigin="anonymous">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/themes/blue/pace-theme-center-atom.css">
+  <script src="https://cdn.jsdelivr.net/npm/pace-js@1.2.4/pace.min.js" integrity="sha256-gqd7YTjg/BtfqWSwsJOvndl0Bxc8gFImLEkXQT8+qj0=" crossorigin="anonymous"></script>
+
+<script class="next-config" data-name="main" type="application/json">{"hostname":"blog.k8s.li","root":"/","images":"/images","scheme":"Gemini","darkmode":false,"version":"8.11.1","exturl":false,"sidebar":{"position":"left","display":"always","padding":18,"offset":12},"copycode":true,"bookmark":{"enable":false,"color":"#222","save":"auto"},"mediumzoom":false,"lazyload":true,"pangu":false,"comments":{"style":"buttons","active":"disqus","storage":true,"lazyload":false,"nav":{"disqus":{"text":"Load Disqus","order":-1}},"activeClass":"disqus"},"stickytabs":false,"motion":{"enable":false,"async":false,"transition":{"post_block":"fadeIn","post_header":"fadeInDown","post_body":"fadeInDown","coll_header":"fadeInLeft","sidebar":"fadeInUp"}},"prism":false,"i18n":{"placeholder":"搜索...","empty":"没有找到任何搜索结果：${query}","hits_time":"找到 ${hits} 个搜索结果（用时 ${time} 毫秒）","hits":"找到 ${hits} 个搜索结果"},"path":"/search.xml","localsearch":{"enable":true,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false}}</script><script src="/js/config.js"></script>
+
+    <meta name="description" content="项目上使用到 argo-workflow 作为工作流引擎来编排运行一些 超融合 集群部署相关的任务，整套环境运行在一个单节点的 K3s 上。之所以选择 argo-workflow + K3s 的搭配主要是想尽可能少地占用系统资源，因为这套环境将来会运行在各种硬件配置不同的笔记本电脑上 😂。综合调研了一些常见的 K8s 部署工具最终就选择了系统资源占用较少的 K3s。 现在项目的一个需求就是在集群">
+<meta property="og:type" content="blog">
+<meta property="og:title" content="使用 kubectl 自动归档 argo workflow 日志">
+<meta property="og:url" content="https://blog.k8s.li/2022-02-28-archive-argo-workflow-log-by-kubectl.html">
+<meta property="og:site_name" content="涂山湖畔">
+<meta property="og:description" content="项目上使用到 argo-workflow 作为工作流引擎来编排运行一些 超融合 集群部署相关的任务，整套环境运行在一个单节点的 K3s 上。之所以选择 argo-workflow + K3s 的搭配主要是想尽可能少地占用系统资源，因为这套环境将来会运行在各种硬件配置不同的笔记本电脑上 😂。综合调研了一些常见的 K8s 部署工具最终就选择了系统资源占用较少的 K3s。 现在项目的一个需求就是在集群">
+<meta property="og:locale" content="zh_CN">
+<meta property="og:image" content="https://p.k8s.li/2021-08-31-pass-tob-k8s-offline-deploy-2.jpeg">
+<meta property="article:published_time" content="2022-02-27T16:00:00.000Z">
+<meta property="article:modified_time" content="2022-02-27T16:00:00.000Z">
+<meta property="article:author" content="koi">
+<meta property="article:tag" content="kubectl">
+<meta property="article:tag" content="argo-workflow">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="https://p.k8s.li/2021-08-31-pass-tob-k8s-offline-deploy-2.jpeg">
+
+
+<link rel="canonical" href="https://blog.k8s.li/2022-02-28-archive-argo-workflow-log-by-kubectl.html">
+
+
+
+<script class="next-config" data-name="page" type="application/json">{"sidebar":"","isHome":false,"isPost":true,"lang":"zh-CN","comments":true,"permalink":"https://blog.k8s.li/2022-02-28-archive-argo-workflow-log-by-kubectl.html","path":"2022-02-28-archive-argo-workflow-log-by-kubectl.html","title":"使用 kubectl 自动归档 argo workflow 日志"}</script>
+
+<script class="next-config" data-name="calendar" type="application/json">""</script>
+<title>使用 kubectl 自动归档 argo workflow 日志 | 涂山湖畔</title>
+  
+
+
+
+
+
+  <noscript>
+    <link rel="stylesheet" href="/css/noscript.css">
+  </noscript>
+<link rel="alternate" href="/atom.xml" title="涂山湖畔" type="application/atom+xml">
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="headband"></div>
+
+  <main class="main">
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="切换导航栏" role="button">
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+        <span class="toggle-line"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <i class="logo-line"></i>
+      <p class="site-title">涂山湖畔</p>
+      <i class="logo-line"></i>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+        <i class="fa fa-search fa-fw fa-lg"></i>
+    </div>
+  </div>
+</div>
+
+
+
+<nav class="site-nav">
+  <ul class="main-menu menu"><li class="menu-item menu-item-home"><a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a></li><li class="menu-item menu-item-books"><a href="/" rel="section"><i class="fa fa-book fa-fw"></i>Books</a></li><li class="menu-item menu-item-kindle"><a href="/" rel="section"><i class="fa fa-swatchbook fa-fw"></i>Kindle</a></li><li class="menu-item menu-item-link"><a href="/friends.html" rel="section"><i class="fa fa-link fa-fw"></i>Link</a></li><li class="menu-item menu-item-about"><a href="/about.html" rel="section"><i class="fa fa-user fa-fw"></i>About</a></li>
+      <li class="menu-item menu-item-search">
+        <a role="button" class="popup-trigger"><i class="fa fa-search fa-fw"></i>搜索
+        </a>
+      </li>
+  </ul>
+</nav>
+
+
+
+  <div class="search-pop-overlay">
+    <div class="popup search-popup"><div class="search-header">
+  <span class="search-icon">
+    <i class="fa fa-search"></i>
+  </span>
+  <div class="search-input-container">
+    <input autocomplete="off" autocapitalize="off" maxlength="80"
+           placeholder="搜索..." spellcheck="false"
+           type="search" class="search-input">
+  </div>
+  <span class="popup-btn-close" role="button">
+    <i class="fa fa-times-circle"></i>
+  </span>
+</div>
+<div class="search-result-container no-result">
+  <div class="search-result-icon">
+    <i class="fa fa-spinner fa-pulse fa-5x"></i>
+  </div>
+</div>
+
+    </div>
+  </div>
+
+</div>
+        
+  
+  <div class="toggle sidebar-toggle" role="button">
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+    <span class="toggle-line"></span>
+  </div>
+
+  <aside class="sidebar">
+
+    <div class="sidebar-inner sidebar-nav-active sidebar-toc-active">
+      <ul class="sidebar-nav">
+        <li class="sidebar-nav-toc">
+          文章目录
+        </li>
+        <li class="sidebar-nav-overview">
+          站点概览
+        </li>
+      </ul>
+
+      <div class="sidebar-panel-container">
+        <!--noindex-->
+        <div class="post-toc-wrap sidebar-panel">
+            <div class="post-toc animated"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#kubectl"><span class="nav-number">1.</span> <span class="nav-text">kubectl</span></a><ol class="nav-child"><li class="nav-item nav-level-3"><a class="nav-link" href="#%E7%AD%9B%E9%80%89-pod"><span class="nav-number">1.1.</span> <span class="nav-text">筛选 pod</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#%E8%8E%B7%E5%8F%96%E6%97%A5%E5%BF%97"><span class="nav-number">1.2.</span> <span class="nav-text">获取日志</span></a></li><li class="nav-item nav-level-3"><a class="nav-link" href="#workflow"><span class="nav-number">1.3.</span> <span class="nav-text">workflow</span></a></li></ol></li></ol></div>
+        </div>
+        <!--/noindex-->
+
+        <div class="site-overview-wrap sidebar-panel">
+          <div class="site-author site-overview-item animated" itemprop="author" itemscope itemtype="http://schema.org/Person">
+    <img class="site-author-image" itemprop="image" alt="koi"
+      src="/images/avatar.png">
+  <p class="site-author-name" itemprop="name">koi</p>
+  <div class="site-description" itemprop="description">Stay Hungry, Stay Foolish</div>
+</div>
+<div class="site-state-wrap site-overview-item animated">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+        <a href="/archives/">
+          <span class="site-state-item-count">5</span>
+          <span class="site-state-item-name">日志</span>
+        </a>
+      </div>
+      <div class="site-state-item site-state-categories">
+          <a href="/categories/">
+        <span class="site-state-item-count">1</span>
+        <span class="site-state-item-name">分类</span></a>
+      </div>
+      <div class="site-state-item site-state-tags">
+          <a href="/tags/">
+        <span class="site-state-item-count">8</span>
+        <span class="site-state-item-name">标签</span></a>
+      </div>
+  </nav>
+</div>
+  <div class="links-of-author site-overview-item animated">
+      <span class="links-of-author-item">
+        <a href="https://szxgithub.github.io/" title="GitHub → https:&#x2F;&#x2F;szxgithub.github.io&#x2F;" rel="noopener" target="_blank"><i class="fab fa-github fa-fw"></i>GitHub</a>
+      </span>
+      <span class="links-of-author-item">
+        <a href="/coderszx@gmail.com" title="E-Mail → coderszx@gmail.com"><i class="fa fa-envelope fa-fw"></i>E-Mail</a>
+      </span>
+  </div>
+
+
+
+        </div>
+      </div>
+        <div class="back-to-top animated" role="button" aria-label="返回顶部">
+          <i class="fa fa-arrow-up"></i>
+          <span>0%</span>
+        </div>
+    </div>
+  </aside>
+  <div class="sidebar-dimmer"></div>
+
+
+    </header>
+
+    
+  <div class="reading-progress-bar"></div>
+
+<noscript>
+  <div class="noscript-warning">Theme NexT works best with JavaScript enabled</div>
+</noscript>
+
+
+    <div class="main-inner post posts-expand">
+
+
+  
+
+
+<div class="post-block">
+  
+  
+
+  <article itemscope itemtype="http://schema.org/Article" class="post-content" lang="zh-CN">
+    <link itemprop="mainEntityOfPage" href="https://blog.k8s.li/2022-02-28-archive-argo-workflow-log-by-kubectl.html">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.png">
+      <meta itemprop="name" content="koi">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="涂山湖畔">
+      <meta itemprop="description" content="Stay Hungry, Stay Foolish">
+    </span>
+
+    <span hidden itemprop="post" itemscope itemtype="http://schema.org/CreativeWork">
+      <meta itemprop="name" content="使用 kubectl 自动归档 argo workflow 日志 | 涂山湖畔">
+      <meta itemprop="description" content="">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          使用 kubectl 自动归档 argo workflow 日志
+        </h1>
+
+        <div class="post-meta-container">
+          <div class="post-meta">
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-calendar"></i>
+      </span>
+      <span class="post-meta-item-text">发表于</span>
+
+      <time title="创建时间：2022-02-28 2022-02-28T00:00:00+08:00" itemprop="dateCreated datePublished" datetime="2022-02-28T00:00:00+08:00">2022-02-28</time>
+    </span>
+    <span class="post-meta-item">
+      <span class="post-meta-item-icon">
+        <i class="far fa-folder"></i>
+      </span>
+      <span class="post-meta-item-text">分类于</span>
+        <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+          <a href="/categories/%E6%8A%80%E6%9C%AF/" itemprop="url" rel="index"><span itemprop="name">技术</span></a>
+        </span>
+    </span>
+
+  
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Disqus：</span>
+    
+    <a title="disqus" href="/2022-02-28-archive-argo-workflow-log-by-kubectl.html#disqus_thread" itemprop="discussionUrl">
+      <span class="post-comments-count disqus-comment-count" data-disqus-identifier="2022-02-28-archive-argo-workflow-log-by-kubectl.html" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+    <span class="post-meta-break"></span>
+    <span class="post-meta-item" title="本文字数">
+      <span class="post-meta-item-icon">
+        <i class="far fa-file-word"></i>
+      </span>
+      <span class="post-meta-item-text">本文字数：</span>
+      <span>4.9k</span>
+    </span>
+    <span class="post-meta-item" title="阅读时长">
+      <span class="post-meta-item-icon">
+        <i class="far fa-clock"></i>
+      </span>
+      <span class="post-meta-item-text">阅读时长 &asymp;</span>
+      <span>4 分钟</span>
+    </span>
+</div>
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+        <p>项目上使用到 <a target="_blank" rel="noopener" href="https://github.com/argoproj/argo-workflows">argo-workflow</a> 作为工作流引擎来编排运行一些 <a target="_blank" rel="noopener" href="https://www.smartx.com/solution/virtualization/">超融合</a> 集群部署相关的任务，整套环境运行在一个单节点的 K3s 上。之所以选择 argo-workflow + K3s 的搭配主要是想尽可能少地占用系统资源，因为这套环境将来会运行在各种硬件配置不同的笔记本电脑上 😂。综合调研了一些常见的 K8s 部署工具最终就选择了系统资源占用较少的 K3s。</p>
+<p>现在项目的一个需求就是在集群部署完成或失败之后需要将 workflow 的日志归档保存下来。虽然可以在 workflow 的 spec 字段中使用 <code>archiveLogs: true</code> 来让 argo 帮我们自动归档日志，但这个特性依赖于一个 S3 对象存储 <a target="_blank" rel="noopener" href="https://argoproj.github.io/argo-workflows/configure-artifact-repository/">Artifact Repository</a> 。这就意味着还要再部署一个支持 S3 对象存储的组件比如 <a target="_blank" rel="noopener" href="https://min.io/">Minio</a> ，直接把我给整不会了 🌚</p>
+<p><img src="https://p.k8s.li/2021-08-31-pass-tob-k8s-offline-deploy-2.jpeg"></p>
+<p>其实嘛这个需求很简单的，我就想保存一个日志文件而已，你还再让我安装一个 <a target="_blank" rel="noopener" href="https://min.io/">Minio</a>，实在是太过分了！本来系统的资源十分有限，需要尽可能减少安装一些不必要依赖，为的就是将资源利用率将到最低。但现在为了归档存储一个日志文件储而大动干戈装一个 minio 实在是不划算。这就好比你费了好大功夫部署一套 3 节点的 kubernetes 集群，然而就为了运行一个静态博客那样滑稽 😂</p>
+
+
+<blockquote class="twitter-tweet"><p lang="en" dir="ltr">Deployed my blog on Kubernetes <a target="_blank" rel="noopener" href="https://t.co/XHXWLrmYO4">pic.twitter.com/XHXWLrmYO4</a></p>&mdash; For DevOps Eyes Only (@dexhorthy) <a target="_blank" rel="noopener" href="https://twitter.com/dexhorthy/status/856639005462417409?ref_src=twsrc%5Etfw">April 24, 2017</a></blockquote> <script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script>
+
+
+
+<p>对于咱这种 <code>用不起</code> S3 对象存储的穷人家孩子，还是想一些其他办法吧，毕竟自己动手丰衣足食。</p>
+<h2 id="kubectl"><a href="#kubectl" class="headerlink" title="kubectl"></a>kubectl</h2><p>实现起来也比较简单，对于咱这种 YAML 工程师来说，kubectl 自然再熟悉不过了。想要获取 workflow 的日志，只需要通过 kubectl logs 命令获取出 workflow 所创的 pod 日志就行了呀，要什么 S3 对象存储 😖</p>
+<h3 id="筛选-pod"><a href="#筛选-pod" class="headerlink" title="筛选 pod"></a>筛选 pod</h3><p>对于同一个 workflow 来将，每个 stage 所创建出来的 pod name 有一定的规律。在定义 workflow 的时候，<a target="_blank" rel="noopener" href="https://argoproj.github.io/argo-workflows/fields/#objectmeta">generateName</a> 参数通常使用 <code>$&#123;name&#125;-</code> 格式。以 <code>-</code> 作为分隔符，最后一个字段是随机生成的一个数字 ID，倒数第二个字段则是 argo 随机生成的 workflow ID，剩余前面的字符则是我们定义的 generateName。</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> argoproj.io/v1alpha1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Workflow
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">generateName</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test<span class="token punctuation">-</span><span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">archive-log-test-jzt8n-3498199655                          <span class="token number">0</span>/2     Completed   <span class="token number">0</span>               4m18s
+archive-log-test-jzt8n-3618624526                          <span class="token number">0</span>/2     Completed   <span class="token number">0</span>               4m8s
+archive-log-test-jzt8n-2123203324                          <span class="token number">0</span>/2     Completed   <span class="token number">0</span>               3m58s<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span></span></code></pre>
+
+<p>在 pod 的 labels 中同样也包含着该 workflow 所对应的 ID，因此我们可以根据此 labels 过滤出该 workflow 所创建出来的 pod。</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> v1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Pod
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">annotations</span><span class="token punctuation">:</span>
+    <span class="token key atrule">workflows.argoproj.io/node-id</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test<span class="token punctuation">-</span>jzt8n<span class="token punctuation">-</span><span class="token number">3498199655</span>
+    <span class="token key atrule">workflows.argoproj.io/node-name</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test<span class="token punctuation">-</span>jzt8n<span class="token punctuation">[</span><span class="token number">0</span><span class="token punctuation">]</span>.list<span class="token punctuation">-</span>default<span class="token punctuation">-</span>running<span class="token punctuation">-</span>pods
+  <span class="token key atrule">creationTimestamp</span><span class="token punctuation">:</span> <span class="token string">"2022-02-28T12:53:32Z"</span>
+  <span class="token key atrule">labels</span><span class="token punctuation">:</span>
+    <span class="token key atrule">workflows.argoproj.io/completed</span><span class="token punctuation">:</span> <span class="token string">"true"</span>
+    <span class="token key atrule">workflows.argoproj.io/workflow</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test<span class="token punctuation">-</span>jzt8n
+  <span class="token key atrule">name</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test<span class="token punctuation">-</span>jzt8n<span class="token punctuation">-</span><span class="token number">3498199655</span>
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> default
+  <span class="token key atrule">ownerReferences</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> argoproj.io/v1alpha1
+    <span class="token key atrule">blockOwnerDeletion</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+    <span class="token key atrule">controller</span><span class="token punctuation">:</span> <span class="token boolean important">true</span>
+    <span class="token key atrule">kind</span><span class="token punctuation">:</span> Workflow
+    <span class="token key atrule">name</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test<span class="token punctuation">-</span>jzt8n
+    <span class="token key atrule">uid</span><span class="token punctuation">:</span> e91df2cb<span class="token punctuation">-</span>b567<span class="token punctuation">-</span>4cf0<span class="token punctuation">-</span>9be5<span class="token punctuation">-</span>3dd6c72854cd
+  <span class="token key atrule">resourceVersion</span><span class="token punctuation">:</span> <span class="token string">"1251330"</span>
+  <span class="token key atrule">uid</span><span class="token punctuation">:</span> ce37a709<span class="token punctuation">-</span>8236<span class="token punctuation">-</span>445b<span class="token punctuation">-</span>8d00<span class="token punctuation">-</span>a7926fa18ed0<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>通过 <code>-l lables</code> 过滤出一个 workflow 所创建的 pod；通过 <code>--sort-by</code> 以创建时间进行排序；通过 <code>-o name</code> 只输出 pod 的 name：</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ kubectl get pods -l workflows.argoproj.io/workflow<span class="token operator">=</span>archive-log-test-jzt8n --sort-by<span class="token operator">=</span><span class="token string">'.metadata.creationTimestamp'</span> -o name
+pod/archive-log-test-jzt8n-3498199655
+pod/archive-log-test-jzt8n-3618624526
+pod/archive-log-test-jzt8n-2123203324<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="获取日志"><a href="#获取日志" class="headerlink" title="获取日志"></a>获取日志</h3><p>通过上面的步骤我们就可以获取到一个 workflow 所创建的 pod 列表。然后再通过 kubectl logs 命令获取 pod 中 main 容器的日志，为方便区分日志的所对应的 workflow ，我们就以 workflow 的 ID 为前缀名。</p>
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash">$ kubectl logs archive-log-test-jzt8n-3618624526 -c main<span aria-hidden="true" class="line-numbers-rows"><span></span></span></code></pre>
+
+<pre class="line-numbers language-bash" data-language="bash"><code class="language-bash"><span class="token assign-left variable">LOG_PATH</span><span class="token operator">=</span>/var/log
+<span class="token assign-left variable">NAME</span><span class="token operator">=</span>archive-log-test-jzt8n
+kubectl get pods -l workflows.argoproj.io/workflow<span class="token operator">=</span><span class="token variable">$&#123;NAME&#125;</span> <span class="token punctuation">\</span>
+--sort-by<span class="token operator">=</span><span class="token string">'.metadata.creationTimestamp'</span> -o name <span class="token punctuation">\</span>
+<span class="token operator">|</span> <span class="token function">xargs</span> -I <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span> -t kubectl logs <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span> -c main <span class="token operator">>></span> <span class="token variable">$&#123;LOG_PATH&#125;</span>/<span class="token variable">$&#123;NAME&#125;</span>.log<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<h3 id="workflow"><a href="#workflow" class="headerlink" title="workflow"></a>workflow</h3><p>根据 argo-workflow 官方提供的 <a target="_blank" rel="noopener" href="https://github.com/argoproj/argo-workflows/blob/master/examples/exit-handlers.yaml"><strong>exit-handlers.yaml</strong></a> example，我们就照葫芦画瓢搓一个 workflow 退出后自动调用使用 kubectl 获取 workflow 日志的一个 step，定义的 exit-handler 内容如下：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml">  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> exit<span class="token punctuation">-</span>handler
+    <span class="token key atrule">container</span><span class="token punctuation">:</span>
+      <span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token string">"kubectl"</span>
+      <span class="token key atrule">image</span><span class="token punctuation">:</span> lachlanevenson/k8s<span class="token punctuation">-</span>kubectl<span class="token punctuation">:</span>v1.23.2
+      <span class="token key atrule">command</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> sh
+        <span class="token punctuation">-</span> <span class="token punctuation">-</span>c
+        <span class="token punctuation">-</span> <span class="token punctuation">|</span><span class="token scalar string">
+          kubectl get pods -l workflows.argoproj.io/workflow=$&#123;POD_NAME%-*&#125; \
+          --sort-by=".metadata.creationTimestamp" -o name | grep -v $&#123;POD_NAME&#125; \
+          | xargs -I &#123;&#125; -t kubectl logs &#123;&#125; -c main >> $&#123;LOG_PATH&#125;/$&#123;POD_NAME%-*&#125;.log</span>
+      <span class="token key atrule">env</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> POD_NAME
+          <span class="token key atrule">valueFrom</span><span class="token punctuation">:</span>
+            <span class="token key atrule">fieldRef</span><span class="token punctuation">:</span>
+              <span class="token key atrule">fieldPath</span><span class="token punctuation">:</span> metadata.name
+        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> LOG_PATH
+          <span class="token key atrule">value</span><span class="token punctuation">:</span> /var/log/workflow
+      <span class="token key atrule">resources</span><span class="token punctuation">:</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+      <span class="token key atrule">volumeMounts</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nfs<span class="token punctuation">-</span>datastore
+          <span class="token key atrule">mountPath</span><span class="token punctuation">:</span> /var/log/workflow
+    <span class="token key atrule">retryStrategy</span><span class="token punctuation">:</span>
+      <span class="token key atrule">limit</span><span class="token punctuation">:</span> <span class="token string">"5"</span>
+      <span class="token key atrule">retryPolicy</span><span class="token punctuation">:</span> OnFailure
+<span class="token key atrule">entrypoint</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test
+<span class="token key atrule">serviceAccountName</span><span class="token punctuation">:</span> default
+<span class="token key atrule">volumes</span><span class="token punctuation">:</span>
+  <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nfs<span class="token punctuation">-</span>datastore
+    <span class="token key atrule">nfs</span><span class="token punctuation">:</span>
+      <span class="token key atrule">server</span><span class="token punctuation">:</span> NFS_SERVER
+      <span class="token key atrule">path</span><span class="token punctuation">:</span> /data/workflow/log
+<span class="token key atrule">onExit</span><span class="token punctuation">:</span> exit<span class="token punctuation">-</span>handler<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+<p>将上述定义的 <code>exit-handler</code> 内容复制粘贴到你的 workflow spec 配置中就可以。由于日志需要持久化存储，我这里使用的是 NFS 存储，也可以根据自己的需要换成其他存储，只需要修改一下 <code>volumes</code> 配置即可。</p>
+<p>完整的 <a target="_blank" rel="noopener" href="https://gist.github.com/muzi502/9b26c6854c509c42ecd7f7004436ca23">workflow example</a> 如下：</p>
+<pre class="line-numbers language-yaml" data-language="yaml"><code class="language-yaml"><span class="token key atrule">apiVersion</span><span class="token punctuation">:</span> argoproj.io/v1alpha1
+<span class="token key atrule">kind</span><span class="token punctuation">:</span> Workflow
+<span class="token key atrule">metadata</span><span class="token punctuation">:</span>
+  <span class="token key atrule">generateName</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test<span class="token punctuation">-</span>
+  <span class="token key atrule">namespace</span><span class="token punctuation">:</span> default
+<span class="token key atrule">spec</span><span class="token punctuation">:</span>
+  <span class="token key atrule">templates</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test
+      <span class="token key atrule">steps</span><span class="token punctuation">:</span>
+        <span class="token punctuation">-</span> <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> list<span class="token punctuation">-</span>default<span class="token punctuation">-</span>running<span class="token punctuation">-</span>pods
+            <span class="token key atrule">template</span><span class="token punctuation">:</span> kubectl
+            <span class="token key atrule">arguments</span><span class="token punctuation">:</span>
+              <span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+                <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> namespace
+                  <span class="token key atrule">value</span><span class="token punctuation">:</span> default
+        <span class="token punctuation">-</span> <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> list<span class="token punctuation">-</span>kube<span class="token punctuation">-</span>system<span class="token punctuation">-</span>running<span class="token punctuation">-</span>pods
+            <span class="token key atrule">template</span><span class="token punctuation">:</span> kubectl
+            <span class="token key atrule">arguments</span><span class="token punctuation">:</span>
+              <span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+                <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> namespace
+                  <span class="token key atrule">value</span><span class="token punctuation">:</span> kube<span class="token punctuation">-</span>system
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> kubectl
+      <span class="token key atrule">inputs</span><span class="token punctuation">:</span>
+        <span class="token key atrule">parameters</span><span class="token punctuation">:</span>
+          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> namespace
+      <span class="token key atrule">container</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token string">"kubectl"</span>
+        <span class="token key atrule">image</span><span class="token punctuation">:</span> lachlanevenson/k8s<span class="token punctuation">-</span>kubectl<span class="token punctuation">:</span>v1.23.2
+        <span class="token key atrule">command</span><span class="token punctuation">:</span>
+          <span class="token punctuation">-</span> sh
+          <span class="token punctuation">-</span> <span class="token punctuation">-</span>c
+          <span class="token punctuation">-</span> <span class="token punctuation">|</span><span class="token scalar string">
+            kubectl get pods --field-selector=status.phase=Running -n &#123;&#123;inputs.parameters.namespace&#125;&#125;</span>
+
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> exit<span class="token punctuation">-</span>handler
+      <span class="token key atrule">container</span><span class="token punctuation">:</span>
+        <span class="token key atrule">name</span><span class="token punctuation">:</span> <span class="token string">"kubectl"</span>
+        <span class="token key atrule">image</span><span class="token punctuation">:</span> lachlanevenson/k8s<span class="token punctuation">-</span>kubectl<span class="token punctuation">:</span>v1.23.2
+        <span class="token key atrule">command</span><span class="token punctuation">:</span>
+          <span class="token punctuation">-</span> sh
+          <span class="token punctuation">-</span> <span class="token punctuation">-</span>c
+          <span class="token punctuation">-</span> <span class="token punctuation">|</span><span class="token scalar string">
+            kubectl get pods -l workflows.argoproj.io/workflow=$&#123;POD_NAME%-*&#125; \
+            --sort-by=".metadata.creationTimestamp" -o name | grep -v $&#123;POD_NAME&#125; \
+            | xargs -I &#123;&#125; -t kubectl logs &#123;&#125; -c main >> $&#123;LOG_PATH&#125;/$&#123;POD_NAME%-*&#125;.log</span>
+        <span class="token key atrule">env</span><span class="token punctuation">:</span>
+          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> POD_NAME
+            <span class="token key atrule">valueFrom</span><span class="token punctuation">:</span>
+              <span class="token key atrule">fieldRef</span><span class="token punctuation">:</span>
+                <span class="token key atrule">fieldPath</span><span class="token punctuation">:</span> metadata.name
+          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> LOG_PATH
+            <span class="token key atrule">value</span><span class="token punctuation">:</span> /var/log/workflow
+        <span class="token key atrule">resources</span><span class="token punctuation">:</span> <span class="token punctuation">&#123;</span><span class="token punctuation">&#125;</span>
+        <span class="token key atrule">volumeMounts</span><span class="token punctuation">:</span>
+          <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nfs<span class="token punctuation">-</span>datastore
+            <span class="token key atrule">mountPath</span><span class="token punctuation">:</span> /var/log/workflow
+      <span class="token key atrule">retryStrategy</span><span class="token punctuation">:</span>
+        <span class="token key atrule">limit</span><span class="token punctuation">:</span> <span class="token string">"5"</span>
+        <span class="token key atrule">retryPolicy</span><span class="token punctuation">:</span> OnFailure
+  <span class="token key atrule">entrypoint</span><span class="token punctuation">:</span> archive<span class="token punctuation">-</span>log<span class="token punctuation">-</span>test
+  <span class="token key atrule">serviceAccountName</span><span class="token punctuation">:</span> default
+  <span class="token key atrule">volumes</span><span class="token punctuation">:</span>
+    <span class="token punctuation">-</span> <span class="token key atrule">name</span><span class="token punctuation">:</span> nfs<span class="token punctuation">-</span>datastore
+      <span class="token key atrule">nfs</span><span class="token punctuation">:</span>
+        <span class="token key atrule">server</span><span class="token punctuation">:</span> NFS_SERVER
+        <span class="token key atrule">path</span><span class="token punctuation">:</span> /data/workflow/log
+  <span class="token key atrule">onExit</span><span class="token punctuation">:</span> exit<span class="token punctuation">-</span>handler<span aria-hidden="true" class="line-numbers-rows"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></span></code></pre>
+
+    </div>
+
+    
+    
+    
+      
+
+
+    <footer class="post-footer">
+          <div class="post-tags">
+              <a href="/tags/kubectl/" rel="tag"># kubectl</a>
+              <a href="/tags/argo-workflow/" rel="tag"># argo-workflow</a>
+          </div>
+
+        
+
+          <div class="post-nav">
+            <div class="post-nav-item">
+                <a href="/2022-02-06-deploy-tanzu-k8s-cluster.html" rel="prev" title="VMware Tanzu kubernetes 发行版部署尝鲜">
+                  <i class="fa fa-chevron-left"></i> VMware Tanzu kubernetes 发行版部署尝鲜
+                </a>
+            </div>
+            <div class="post-nav-item">
+            </div>
+          </div>
+    </footer>
+  </article>
+</div>
+
+
+
+
+
+
+    
+  <div class="comments" id="disqus_thread">
+    <noscript>Please enable JavaScript to view the comments powered by Disqus.</noscript>
+  </div>
+  
+</div>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-inner">
+
+
+<div class="copyright">
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">koi</span>
+</div>
+<div class="wordcount">
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-chart-line"></i>
+    </span>
+      <span>站点总字数：</span>
+    <span title="站点总字数">52k</span>
+  </span>
+  <span class="post-meta-item">
+    <span class="post-meta-item-icon">
+      <i class="fa fa-coffee"></i>
+    </span>
+      <span>站点阅读时长 &asymp;</span>
+    <span title="站点阅读时长">47 分钟</span>
+  </span>
+</div>
+  <div class="powered-by">由 <a href="https://hexo.io/" rel="noopener" target="_blank">Hexo</a> & <a href="https://theme-next.js.org/" rel="noopener" target="_blank">NexT.Gemini</a> 强力驱动
+  </div>
+
+    </div>
+  </footer>
+
+  
+  <script src="https://cdn.jsdelivr.net/npm/animejs@3.2.1/lib/anime.min.js" integrity="sha256-XL2inqUJaslATFnHdJOi9GfQ60on8Wx1C2H8DYiN1xY=" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lozad@1.16.0/dist/lozad.min.js" integrity="sha256-mOFREFhqmHeQbXpK2lp4nA3qooVgACfh88fpJftLBbc=" crossorigin="anonymous"></script>
+<script src="/js/comments.js"></script><script src="/js/utils.js"></script><script src="/js/next-boot.js"></script>
+
+  
+<script src="https://cdn.jsdelivr.net/npm/hexo-generator-searchdb@1.4.0/dist/search.js" integrity="sha256-vXZMYLEqsROAXkEw93GGIvaB2ab+QW6w3+1ahD9nXXA=" crossorigin="anonymous"></script>
+<script src="/js/third-party/search/local-search.js"></script>
+
+
+
+
+  <script src="/js/third-party/pace.js"></script>
+
+  
+
+
+
+
+<script class="next-config" data-name="disqus" type="application/json">{"enable":true,"shortname":"koi","count":true,"i18n":{"disqus":"disqus"}}</script>
+<script src="/js/third-party/comments/disqus.js"></script>
+
+</body>
+</html>
